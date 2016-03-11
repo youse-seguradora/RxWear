@@ -483,9 +483,7 @@ public class RxWear {
          * based on a DataMap.
          *
          * Example:
-         * RxWear.Data.PutSerializable.to("/path", serializable)
-         *      .setUrgent()
-         *      .toObservable()
+         * RxWear.Data.PutSerializable.urgentTo("/path", serializable)
          *      .subscribe(dataItem -> {
          *          // do something
          *      });
@@ -716,7 +714,7 @@ public class RxWear {
         }
 
         private static Observable<Integer> sendToAllRemoteNodesInternal(final String path, final byte[] data, final Long timeout, final TimeUnit timeUnit) {
-            return Node.getRemoteNodesInternal(timeout, timeUnit).flatMap(new Func1<List<com.google.android.gms.wearable.Node>, Observable<com.google.android.gms.wearable.Node>>() {
+            return Node.getConnectedNodesInternal(timeout, timeUnit).flatMap(new Func1<List<com.google.android.gms.wearable.Node>, Observable<com.google.android.gms.wearable.Node>>() {
                 @Override
                 public Observable<com.google.android.gms.wearable.Node> call(List<com.google.android.gms.wearable.Node> nodes) {
                     return Observable.from(nodes);
@@ -930,32 +928,6 @@ public class RxWear {
 
         private static Observable<com.google.android.gms.wearable.Node> getLocalNodeInternal(Long timeout, TimeUnit timeUnit) {
             return Observable.create(new NodeGetLocalObservable(RxWear.get(), timeout, timeUnit));
-        }
-
-        // getRemoteNodes
-
-        public static Observable<List<com.google.android.gms.wearable.Node>> getRemoteNodes() {
-            return getRemoteNodesInternal(null, null);
-        }
-
-        public static Observable<List<com.google.android.gms.wearable.Node>> getRemoteNodes(long timeout, @NonNull TimeUnit timeUnit) {
-            return getRemoteNodesInternal(timeout, timeUnit);
-        }
-
-        private static Observable<List<com.google.android.gms.wearable.Node>> getRemoteNodesInternal(Long timeout, TimeUnit timeUnit) {
-            return getConnectedNodesInternal(timeout, timeUnit).zipWith(getLocalNodeInternal(timeout, timeUnit), new Func2<List<com.google.android.gms.wearable.Node>, com.google.android.gms.wearable.Node, List<com.google.android.gms.wearable.Node>>() {
-                @Override
-                public List<com.google.android.gms.wearable.Node> call(List<com.google.android.gms.wearable.Node> connectedNodes, com.google.android.gms.wearable.Node localNode) {
-                    Iterator<com.google.android.gms.wearable.Node> iterator = connectedNodes.iterator();
-
-                    while(iterator.hasNext()) {
-                        com.google.android.gms.wearable.Node node = iterator.next();
-                        if(node.getId().equals(localNode.getId())) { iterator.remove(); }
-                    }
-
-                    return connectedNodes;
-                }
-            });
         }
 
     }
