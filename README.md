@@ -1,6 +1,6 @@
 # Reactive Wearable API Library for Android
 
-[![Build Status](https://travis-ci.org/patloew/RxWear.svg?branch=master)](https://travis-ci.org/patloew/RxWear)  [ ![Download](https://api.bintray.com/packages/patloew/maven/com.patloew.rxwear/images/download.svg) ](https://bintray.com/patloew/maven/com.patloew.rxwear/_latestVersion) [![API](https://img.shields.io/badge/API-9%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=9)
+[![Build Status](https://travis-ci.org/patloew/RxWear.svg?branch=master)](https://travis-ci.org/patloew/RxWear)  [ ![Download](https://api.bintray.com/packages/patloew/maven/RxWear/images/download.svg) ](https://bintray.com/patloew/maven/RxWear/_latestVersion) [![API](https://img.shields.io/badge/API-9%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=9)
 
 This library wraps the Wearable API in [RxJava](https://github.com/ReactiveX/RxJava) Observables. No more managing GoogleApiClients! Also, there are some helper classes, which ease communication between phone and wear app.
 
@@ -76,11 +76,7 @@ A basic sample app is available in the `sample` and `wearsample` projects.
 
 # Setup
 
-Add the following to your `build.gradle`:
-
-	repositories {		
-		maven { url 'https://dl.bintray.com/patloew/maven' }		
-	}
+The lib is available on jCenter. Add the following to your `build.gradle`:
 
 	dependencies {
 	    compile 'com.patloew.rxwear:rxwear:1.0.0'

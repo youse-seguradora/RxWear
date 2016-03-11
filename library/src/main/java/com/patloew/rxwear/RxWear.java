@@ -61,7 +61,7 @@ public class RxWear {
 
     private static RxWear instance = null;
 
-    private static @NonNull Long timeoutTime = null;
+    private static Long timeoutTime = null;
     private static TimeUnit timeoutUnit = null;
 
     private final Context ctx;
