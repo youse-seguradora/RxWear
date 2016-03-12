@@ -37,8 +37,8 @@ dependencies {
     compile "com.android.support:design:23.2.0"
     compile "com.android.support:gridlayout-v7:23.2.0"
 
-    //compile project(':library')
-    compile 'com.patloew.rxwear:rxwear:1.0.0'
+    compile project(':library')
+    //compile 'com.patloew.rxwear:rxwear:1.1.0'
 
     compile 'io.reactivex:rxjava:1.1.1'
     compile 'io.reactivex:rxandroid:1.1.0'

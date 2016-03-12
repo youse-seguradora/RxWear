@@ -1,15 +1,17 @@
 package com.patloew.rxwear;
 
+import android.net.Uri;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.Channel;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.Wearable;
 
-import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -24,25 +26,24 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelGetOutputStreamObservable extends BaseObservable<OutputStream> {
+public class DataGetItemSingle extends BaseSingle<DataItem> {
 
-    private final Channel channel;
+    private final Uri uri;
 
-    ChannelGetOutputStreamObservable(RxWear rxWear, Channel channel, Long timeout, TimeUnit timeUnit) {
+    DataGetItemSingle(RxWear rxWear, Uri uri, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
-        this.channel = channel;
+        this.uri = uri;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super OutputStream> observer) {
-        setupWearPendingResult(channel.getOutputStream(apiClient), new ResultCallback<Channel.GetOutputStreamResult>() {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super DataItem> subscriber) {
+        setupWearPendingResult(Wearable.DataApi.getDataItem(apiClient, uri), new ResultCallback<DataApi.DataItemResult>() {
             @Override
-            public void onResult(@NonNull Channel.GetOutputStreamResult getOutputStreamResult) {
-                if (!getOutputStreamResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(getOutputStreamResult.getStatus()));
+            public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
+                if (!dataItemResult.getStatus().isSuccess()) {
+                    subscriber.onError(new StatusException(dataItemResult.getStatus()));
                 } else {
-                    observer.onNext(getOutputStreamResult.getOutputStream());
-                    observer.onCompleted();
+                    subscriber.onSuccess(dataItemResult.getDataItem().freeze());
                 }
             }
         });

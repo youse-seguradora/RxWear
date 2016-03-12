@@ -1,15 +1,18 @@
 package com.patloew.rxwear;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Scope;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Subscriber;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.functions.Action0;
 import rx.subscriptions.Subscriptions;
 
@@ -32,14 +35,18 @@ import rx.subscriptions.Subscriptions;
  * FILE MODIFIED by Patrick Löwenstein, 2016
  *
  */
-public abstract class BaseObservable<T> extends BaseRx<T> implements Observable.OnSubscribe<T> {
+public abstract class BaseSingle<T> extends BaseRx<T> implements Single.OnSubscribe<T> {
 
-    protected BaseObservable(@NonNull RxWear rxWear, Long timeout, TimeUnit timeUnit) {
+    protected BaseSingle(@NonNull RxWear rxWear, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
     }
 
+    protected BaseSingle(@NonNull Context ctx, @NonNull Api<? extends Api.ApiOptions.NotRequiredOptions>[] services, Scope[] scopes) {
+        super(ctx, services, scopes);
+    }
+
     @Override
-    public final void call(Subscriber<? super T> subscriber) {
+    public final void call(SingleSubscriber<? super T> subscriber) {
         final GoogleApiClient apiClient = createApiClient(new ApiClientConnectionCallbacks(subscriber));
 
         try {
@@ -59,13 +66,13 @@ public abstract class BaseObservable<T> extends BaseRx<T> implements Observable.
         }));
     }
 
-    protected abstract void onGoogleApiClientReady(GoogleApiClient apiClient, Subscriber<? super T> subscriber);
+    protected abstract void onGoogleApiClientReady(GoogleApiClient apiClient, SingleSubscriber<? super T> subscriber);
 
     protected class ApiClientConnectionCallbacks extends BaseRx.ApiClientConnectionCallbacks {
 
-        final protected Subscriber<? super T> subscriber;
+        final protected SingleSubscriber<? super T> subscriber;
 
-        private ApiClientConnectionCallbacks(Subscriber<? super T> subscriber) {
+        private ApiClientConnectionCallbacks(SingleSubscriber<? super T> subscriber) {
             this.subscriber = subscriber;
         }
 

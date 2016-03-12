@@ -13,7 +13,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.Subscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -42,12 +42,12 @@ public class DataListenerObservable extends BaseObservable<DataEvent> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super DataEvent> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super DataEvent> subscriber) {
         listener = new DataApi.DataListener() {
             @Override
             public void onDataChanged(DataEventBuffer dataEventBuffer) {
                 for(int i=0; i<dataEventBuffer.getCount(); i++) {
-                    observer.onNext(dataEventBuffer.get(i).freeze());
+                    subscriber.onNext(dataEventBuffer.get(i).freeze());
                 }
             }
         };
@@ -56,7 +56,7 @@ public class DataListenerObservable extends BaseObservable<DataEvent> {
             @Override
             public void onResult(@NonNull Status status) {
                 if (!status.isSuccess()) {
-                    observer.onError(new StatusException(status));
+                    subscriber.onError(new StatusException(status));
                 }
             }
         };

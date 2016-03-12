@@ -12,7 +12,7 @@ import com.patloew.rxwear.events.NodeEvent;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.Subscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -37,16 +37,16 @@ public class NodeListenerObservable extends BaseObservable<NodeEvent> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super NodeEvent> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super NodeEvent> subscriber) {
         listener = new NodeApi.NodeListener() {
             @Override
             public void onPeerConnected(Node node) {
-                observer.onNext(new NodeEvent(node, true));
+                subscriber.onNext(new NodeEvent(node, true));
             }
 
             @Override
             public void onPeerDisconnected(Node node) {
-                observer.onNext(new NodeEvent(node, false));
+                subscriber.onNext(new NodeEvent(node, false));
             }
         };
 
@@ -54,7 +54,7 @@ public class NodeListenerObservable extends BaseObservable<NodeEvent> {
             @Override
             public void onResult(@NonNull Status status) {
                 if (!status.isSuccess()) {
-                    observer.onError(new StatusException(status));
+                    subscriber.onError(new StatusException(status));
                 }
             }
         };

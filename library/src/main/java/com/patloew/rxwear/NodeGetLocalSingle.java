@@ -10,7 +10,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -25,22 +25,21 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class NodeGetLocalObservable extends BaseObservable<Node> {
+public class NodeGetLocalSingle extends BaseSingle<Node> {
 
-    NodeGetLocalObservable(RxWear rxWear, Long timeout, TimeUnit timeUnit) {
+    NodeGetLocalSingle(RxWear rxWear, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Node> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Node> subscriber) {
         setupWearPendingResult(Wearable.NodeApi.getLocalNode(apiClient), new ResultCallback<NodeApi.GetLocalNodeResult>() {
             @Override
             public void onResult(@NonNull NodeApi.GetLocalNodeResult getLocalNodeResult) {
                 if (!getLocalNodeResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(getLocalNodeResult.getStatus()));
+                    subscriber.onError(new StatusException(getLocalNodeResult.getStatus()));
                 } else {
-                    observer.onNext(getLocalNodeResult.getNode());
-                    observer.onCompleted();
+                    subscriber.onSuccess(getLocalNodeResult.getNode());
                 }
             }
         });

@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
         subscription.add(RxView.clicks(setPersistentButton)
                 .doOnNext(click -> hideKeyboard())
-                .flatMap(click2 -> RxWear.Data.PutSerializable.urgentTo("/persistentText", persistentEditText.getText().toString()))
+                .flatMap(click2 -> RxWear.Data.PutSerializable.urgentTo("/persistentText", persistentEditText.getText().toString()).toObservable())
                 .subscribe(dataItem1 -> Snackbar.make(coordinatorLayout, "Set persistent text", Snackbar.LENGTH_LONG).show(),
                         throwable -> {
                             Log.e("MainActivity", "Error on setting persistent text", throwable);

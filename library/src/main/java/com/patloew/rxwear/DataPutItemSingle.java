@@ -11,7 +11,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -26,25 +26,24 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataPutItemObservable extends BaseObservable<DataItem> {
+public class DataPutItemSingle extends BaseSingle<DataItem> {
 
     private final PutDataRequest putDataRequest;
 
-    DataPutItemObservable(RxWear rxWear, PutDataRequest putDataRequest, Long timeout, TimeUnit timeUnit) {
+    DataPutItemSingle(RxWear rxWear, PutDataRequest putDataRequest, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.putDataRequest = putDataRequest;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super DataItem> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super DataItem> subscriber) {
         setupWearPendingResult(Wearable.DataApi.putDataItem(apiClient, putDataRequest), new ResultCallback<DataApi.DataItemResult>() {
             @Override
             public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
                 if (!dataItemResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(dataItemResult.getStatus()));
+                    subscriber.onError(new StatusException(dataItemResult.getStatus()));
                 } else {
-                    observer.onNext(dataItemResult.getDataItem());
-                    observer.onCompleted();
+                    subscriber.onSuccess(dataItemResult.getDataItem());
                 }
             }
         });

@@ -16,7 +16,7 @@ import com.patloew.rxwear.events.OutputClosedEvent;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.Subscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -42,27 +42,27 @@ public class ChannelListenerObservable extends BaseObservable<ChannelEvent> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super ChannelEvent> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super ChannelEvent> subscriber) {
         listener = new ChannelApi.ChannelListener() {
 
             @Override
             public void onChannelOpened(Channel channel) {
-                observer.onNext(new ChannelOpenedEvent(channel));
+                subscriber.onNext(new ChannelOpenedEvent(channel));
             }
 
             @Override
             public void onChannelClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
-                observer.onNext(new ChannelClosedEvent(channel, closeReason, appSpecificErrorCode));
+                subscriber.onNext(new ChannelClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
 
             @Override
             public void onInputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
-                observer.onNext(new InputClosedEvent(channel, closeReason, appSpecificErrorCode));
+                subscriber.onNext(new InputClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
 
             @Override
             public void onOutputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
-                observer.onNext(new OutputClosedEvent(channel, closeReason, appSpecificErrorCode));
+                subscriber.onNext(new OutputClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
         };
 
@@ -70,7 +70,7 @@ public class ChannelListenerObservable extends BaseObservable<ChannelEvent> {
             @Override
             public void onResult(@NonNull Status status) {
                 if (!status.isSuccess()) {
-                    observer.onError(new StatusException(status));
+                    subscriber.onError(new StatusException(status));
                 }
             }
         };

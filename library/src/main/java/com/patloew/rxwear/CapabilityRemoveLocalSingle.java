@@ -10,7 +10,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -25,25 +25,24 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class CapabilityRemoveLocalObservable extends BaseObservable<Status> {
+public class CapabilityRemoveLocalSingle extends BaseSingle<Status> {
 
     private final String capability;
 
-    CapabilityRemoveLocalObservable(RxWear rxWear, String capability, Long timeout, TimeUnit timeUnit) {
+    CapabilityRemoveLocalSingle(RxWear rxWear, String capability, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.capability = capability;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Status> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
         setupWearPendingResult(Wearable.CapabilityApi.removeLocalCapability(apiClient, capability), new ResultCallback<CapabilityApi.RemoveLocalCapabilityResult>() {
             @Override
             public void onResult(@NonNull CapabilityApi.RemoveLocalCapabilityResult removeLocalCapabilityResult) {
                 if (!removeLocalCapabilityResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(removeLocalCapabilityResult.getStatus()));
+                    subscriber.onError(new StatusException(removeLocalCapabilityResult.getStatus()));
                 } else {
-                    observer.onNext(removeLocalCapabilityResult.getStatus());
-                    observer.onCompleted();
+                    subscriber.onSuccess(removeLocalCapabilityResult.getStatus());
                 }
             }
         });

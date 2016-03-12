@@ -11,7 +11,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -26,27 +26,26 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataGetFdForAssetObservable extends BaseObservable<DataApi.GetFdForAssetResult> {
+public class DataGetFdForAssetSingle extends BaseSingle<DataApi.GetFdForAssetResult> {
 
     private final DataItemAsset dataItemAsset;
     private final Asset asset;
 
-    DataGetFdForAssetObservable(RxWear rxWear, DataItemAsset dataItemAsset, Asset asset, Long timeout, TimeUnit timeUnit) {
+    DataGetFdForAssetSingle(RxWear rxWear, DataItemAsset dataItemAsset, Asset asset, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.dataItemAsset = dataItemAsset;
         this.asset = asset;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super DataApi.GetFdForAssetResult> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super DataApi.GetFdForAssetResult> subscriber) {
         ResultCallback<DataApi.GetFdForAssetResult> resultCallback = new ResultCallback<DataApi.GetFdForAssetResult>() {
             @Override
             public void onResult(@NonNull DataApi.GetFdForAssetResult getFdForAssetResult) {
                 if (!getFdForAssetResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(getFdForAssetResult.getStatus()));
+                    subscriber.onError(new StatusException(getFdForAssetResult.getStatus()));
                 } else {
-                    observer.onNext(getFdForAssetResult);
-                    observer.onCompleted();
+                    subscriber.onSuccess(getFdForAssetResult);
                 }
             }
         };

@@ -11,7 +11,7 @@ import com.google.android.gms.wearable.Wearable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -26,25 +26,24 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class CapabilityGetAllObservable extends BaseObservable<Map<String, CapabilityInfo>> {
+public class CapabilityGetAllSingle extends BaseSingle<Map<String, CapabilityInfo>> {
 
     private final int nodeFilter;
 
-    CapabilityGetAllObservable(RxWear rxWear, int nodeFilter, Long timeout, TimeUnit timeUnit) {
+    CapabilityGetAllSingle(RxWear rxWear, int nodeFilter, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.nodeFilter = nodeFilter;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Map<String, CapabilityInfo>> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Map<String, CapabilityInfo>> subscriber) {
         setupWearPendingResult(Wearable.CapabilityApi.getAllCapabilities(apiClient, nodeFilter), new ResultCallback<CapabilityApi.GetAllCapabilitiesResult>() {
             @Override
             public void onResult(@NonNull CapabilityApi.GetAllCapabilitiesResult getAllCapabilitiesResult) {
                 if (!getAllCapabilitiesResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(getAllCapabilitiesResult.getStatus()));
+                    subscriber.onError(new StatusException(getAllCapabilitiesResult.getStatus()));
                 } else {
-                    observer.onNext(getAllCapabilitiesResult.getAllCapabilities());
-                    observer.onCompleted();
+                    subscriber.onSuccess(getAllCapabilitiesResult.getAllCapabilities());
                 }
             }
         });

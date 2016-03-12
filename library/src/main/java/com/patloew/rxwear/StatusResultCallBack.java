@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -22,19 +22,18 @@ import rx.Observer;
  * limitations under the License. */
 public class StatusResultCallBack implements ResultCallback<Status> {
 
-    private final Observer<? super Status> observer;
+    private final SingleSubscriber<? super Status> subscriber;
 
-    public StatusResultCallBack(@NonNull Observer<? super Status> observer) {
-        this.observer = observer;
+    public StatusResultCallBack(@NonNull SingleSubscriber<? super Status> subscriber) {
+        this.subscriber = subscriber;
     }
 
     @Override
     public void onResult(@NonNull Status status) {
         if (!status.isSuccess()) {
-            observer.onError(new StatusException(status));
+            subscriber.onError(new StatusException(status));
         } else {
-            observer.onNext(status);
-            observer.onCompleted();
+            subscriber.onSuccess(status);
         }
     }
 }

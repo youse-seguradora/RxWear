@@ -4,12 +4,14 @@ import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.Channel;
+import com.google.android.gms.wearable.ChannelApi;
 import com.google.android.gms.wearable.Wearable;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -24,29 +26,30 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class MessageSendObservable extends BaseObservable<Integer> {
+public class ChannelOpenSingle extends BaseSingle<Channel> {
 
     private final String nodeId;
     private final String path;
-    private final byte[] data;
 
-    MessageSendObservable(RxWear rxWear, String nodeId, String path, byte[] data, Long timeout, TimeUnit timeUnit) {
+    ChannelOpenSingle(RxWear rxWear, String nodeId, String path, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.nodeId = nodeId;
         this.path = path;
-        this.data = data;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Integer> observer) {
-        setupWearPendingResult(Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data), new ResultCallback<MessageApi.SendMessageResult>() {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Channel> subscriber) {
+        setupWearPendingResult(Wearable.ChannelApi.openChannel(apiClient, nodeId, path), new ResultCallback<ChannelApi.OpenChannelResult>() {
             @Override
-            public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
-                if (!sendMessageResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(sendMessageResult.getStatus()));
+            public void onResult(@NonNull ChannelApi.OpenChannelResult openChannelResult) {
+                if (!openChannelResult.getStatus().isSuccess()) {
+                    subscriber.onError(new StatusException(openChannelResult.getStatus()));
                 } else {
-                    observer.onNext(sendMessageResult.getRequestId());
-                    observer.onCompleted();
+                    if(openChannelResult.getChannel() != null) {
+                        subscriber.onSuccess(openChannelResult.getChannel());
+                    } else {
+                        subscriber.onError(new IOException("Channel connection could not be opened"));
+                    }
                 }
             }
         });

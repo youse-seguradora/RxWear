@@ -10,7 +10,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -25,27 +25,26 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataDeleteItemsObservable extends BaseObservable<Integer> {
+public class DataDeleteItemsSingle extends BaseSingle<Integer> {
 
     private final Uri uri;
     private final Integer filterType;
 
-    DataDeleteItemsObservable(RxWear rxWear, Uri uri, Integer filterType, Long timeout, TimeUnit timeUnit) {
+    DataDeleteItemsSingle(RxWear rxWear, Uri uri, Integer filterType, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.uri = uri;
         this.filterType = filterType;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Integer> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Integer> subscriber) {
         ResultCallback<DataApi.DeleteDataItemsResult> resultResultCallback = new ResultCallback<DataApi.DeleteDataItemsResult>() {
             @Override
             public void onResult(@NonNull DataApi.DeleteDataItemsResult deleteDataItemsResult) {
                 if (!deleteDataItemsResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(deleteDataItemsResult.getStatus()));
+                    subscriber.onError(new StatusException(deleteDataItemsResult.getStatus()));
                 } else {
-                    observer.onNext(deleteDataItemsResult.getNumDeleted());
-                    observer.onCompleted();
+                    subscriber.onSuccess(deleteDataItemsResult.getNumDeleted());
                 }
             }
         };

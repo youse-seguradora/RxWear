@@ -46,6 +46,7 @@ import org.powermock.core.classloader.annotations.SuppressStaticInitializationFo
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -53,13 +54,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import rx.Completable;
 import rx.Observable;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.Subscriber;
 import rx.observers.TestSubscriber;
 
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /* Copyright 2016 Patrick Löwenstein
@@ -77,7 +78,7 @@ import static org.mockito.Mockito.when;
  * limitations under the License. */
 
 @RunWith(PowerMockRunner.class)
-@PrepareOnlyThisForTest({ ContextCompat.class, Wearable.class, Status.class, ConnectionResult.class })
+@PrepareOnlyThisForTest({ ContextCompat.class, Wearable.class, Status.class, ConnectionResult.class, BaseRx.class })
 @SuppressStaticInitializationFor("com.google.android.gms.wearable.Wearable")
 public class RxWearTest {
 
@@ -131,7 +132,7 @@ public class RxWearTest {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                final Subscriber<? super T> subscriber = (Subscriber<? super T>) invocation.getArguments()[0];
+                final Subscriber<? super T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
 
                 doAnswer(new Answer<Object>() {
                     @Override
@@ -143,9 +144,32 @@ public class RxWearTest {
 
                 return apiClient;
             }
-        }).when(baseObservable).createApiClient(Matchers.<Subscriber<? super T>>any());
+        }).when(baseObservable).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
+    }
 
+    // Mock GoogleApiClient connection success behaviour
+    private <T> void setupBaseSingleSuccess(final BaseSingle<T> baseSingle) {
+        setupBaseSingleSuccess(baseSingle, apiClient);
+    }
 
+    // Mock GoogleApiClient connection success behaviour
+    private <T> void setupBaseSingleSuccess(final BaseSingle<T> baseSingle, final GoogleApiClient apiClient) {
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                final SingleSubscriber<? super T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+
+                doAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        baseSingle.onGoogleApiClientReady(apiClient, subscriber);
+                        return null;
+                    }
+                }).when(apiClient).connect();
+
+                return apiClient;
+            }
+        }).when(baseSingle).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
     }
 
     // Mock GoogleApiClient connection error behaviour
@@ -153,7 +177,7 @@ public class RxWearTest {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                final Subscriber<? super T> subscriber = (Subscriber<? super T>) invocation.getArguments()[0];
+                final Subscriber<? super T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
 
                 doAnswer(new Answer<Object>() {
                     @Override
@@ -165,7 +189,27 @@ public class RxWearTest {
 
                 return apiClient;
             }
-        }).when(baseObservable).createApiClient(Matchers.<Subscriber<? super T>>any());
+        }).when(baseObservable).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
+    }
+
+    // Mock GoogleApiClient connection error behaviour
+    private <T> void setupBaseSingleError(final BaseSingle<T> baseSingle) {
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                final SingleSubscriber<? super T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+
+                doAnswer(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
+                        return null;
+                    }
+                }).when(apiClient).connect();
+
+                return apiClient;
+            }
+        }).when(baseSingle).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -209,10 +253,10 @@ public class RxWearTest {
     @Test
     public void GoogleAPIClientObservable_Success() {
         TestSubscriber<GoogleApiClient> sub = new TestSubscriber<>();
-        GoogleAPIClientObservable observable = spy(new GoogleAPIClientObservable(ctx, new Api[] {}, new Scope[] {}));
+        GoogleAPIClientSingle single = PowerMockito.spy(new GoogleAPIClientSingle(ctx, new Api[] {}, new Scope[] {}));
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, apiClient);
     }
@@ -220,38 +264,12 @@ public class RxWearTest {
     @Test
     public void GoogleAPIClientObservable_ConnectionException() {
         TestSubscriber<GoogleApiClient> sub = new TestSubscriber<>();
-        final GoogleAPIClientObservable observable = spy(new GoogleAPIClientObservable(ctx, new Api[] {}, new Scope[] {}));
+        final GoogleAPIClientSingle single = PowerMockito.spy(new GoogleAPIClientSingle(ctx, new Api[] {}, new Scope[] {}));
 
-        setupBaseObservableError(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleError(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, GoogleAPIConnectionException.class);
-    }
-
-    // CheckConnectionCompletable
-
-    @Test
-    public void CheckConnectionCompletable_Success() {
-        TestSubscriber<GoogleApiClient> sub = new TestSubscriber<>();
-        CheckConnectionObservable observable = spy(new CheckConnectionObservable(rxWear));
-
-        setupBaseObservableSuccess(observable);
-        Completable.fromObservable(Observable.create(observable)).subscribe(sub);
-
-        sub.assertCompleted();
-        sub.assertNoValues();
-    }
-
-    @Test
-    public void CheckConnectionCompletable_Error() {
-        TestSubscriber<GoogleApiClient> sub = new TestSubscriber<>();
-        CheckConnectionObservable observable = spy(new CheckConnectionObservable(rxWear));
-
-        setupBaseObservableError(observable);
-        Completable.fromObservable(Observable.create(observable)).subscribe(sub);
-
-        sub.assertError(GoogleAPIConnectionException.class);
-        sub.assertNoValues();
     }
 
     /**************
@@ -264,7 +282,7 @@ public class RxWearTest {
     public void CapabilityAddListenerObservable_String_Success() {
         TestSubscriber<CapabilityInfo> sub = new TestSubscriber<>();
         String capability = "capability";
-        CapabilityListenerObservable observable = spy(new CapabilityListenerObservable(rxWear, capability, null, null, null, null));
+        CapabilityListenerObservable observable = PowerMockito.spy(new CapabilityListenerObservable(rxWear, capability, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -281,7 +299,7 @@ public class RxWearTest {
     public void CapabilityAddListenerObservable_String_StatusException() {
         TestSubscriber<CapabilityInfo> sub = new TestSubscriber<>();
         String capability = "capability";
-        CapabilityListenerObservable observable = spy(new CapabilityListenerObservable(rxWear, capability, null, null, null, null));
+        CapabilityListenerObservable observable = PowerMockito.spy(new CapabilityListenerObservable(rxWear, capability, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -297,7 +315,7 @@ public class RxWearTest {
     public void CapabilityAddListenerObservable_Uri_Success() {
         TestSubscriber<CapabilityInfo> sub = new TestSubscriber<>();
         int flag = 0;
-        CapabilityListenerObservable observable = spy(new CapabilityListenerObservable(rxWear, null, uri, flag, null, null));
+        CapabilityListenerObservable observable = PowerMockito.spy(new CapabilityListenerObservable(rxWear, null, uri, flag, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -314,7 +332,7 @@ public class RxWearTest {
     public void CapabilityAddListenerObservable_Uri_StatusException() {
         TestSubscriber<CapabilityInfo> sub = new TestSubscriber<>();
         int flag = 0;
-        CapabilityListenerObservable observable = spy(new CapabilityListenerObservable(rxWear, null, uri, flag, null, null));
+        CapabilityListenerObservable observable = PowerMockito.spy(new CapabilityListenerObservable(rxWear, null, uri, flag, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -334,7 +352,7 @@ public class RxWearTest {
         Map<String, CapabilityInfo> resultMap = new HashMap<>();
         CapabilityApi.GetAllCapabilitiesResult result = Mockito.mock(CapabilityApi.GetAllCapabilitiesResult.class);
         int nodeFilter = 0;
-        CapabilityGetAllObservable observable = spy(new CapabilityGetAllObservable(rxWear, nodeFilter, null, null));
+        CapabilityGetAllSingle single = PowerMockito.spy(new CapabilityGetAllSingle(rxWear, nodeFilter, null, null));
 
         when(result.getAllCapabilities()).thenReturn(resultMap);
         when(result.getStatus()).thenReturn(status);
@@ -342,8 +360,8 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(capabilityApi.getAllCapabilities(apiClient, nodeFilter)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, resultMap);
     }
@@ -354,7 +372,7 @@ public class RxWearTest {
         Map<String, CapabilityInfo> resultMap = new HashMap<>();
         CapabilityApi.GetAllCapabilitiesResult result = Mockito.mock(CapabilityApi.GetAllCapabilitiesResult.class);
         int nodeFilter = 0;
-        CapabilityGetAllObservable observable = spy(new CapabilityGetAllObservable(rxWear, nodeFilter, null, null));
+        CapabilityGetAllSingle single = PowerMockito.spy(new CapabilityGetAllSingle(rxWear, nodeFilter, null, null));
 
         when(result.getAllCapabilities()).thenReturn(resultMap);
         when(result.getStatus()).thenReturn(status);
@@ -362,21 +380,21 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(capabilityApi.getAllCapabilities(apiClient, nodeFilter)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // CapabilityGetObservable
+    // CapabilityGetSingle
 
     @Test
-    public void CapabilityGetObservable_Success() {
+    public void CapabilityGetSingle_Success() {
         TestSubscriber<CapabilityInfo> sub = new TestSubscriber<>();
         CapabilityApi.GetCapabilityResult result = Mockito.mock(CapabilityApi.GetCapabilityResult.class);
         int nodeFilter = 0;
         String capability = "capability";
-        CapabilityGetObservable observable = spy(new CapabilityGetObservable(rxWear, capability, nodeFilter, null, null));
+        CapabilityGetSingle single = PowerMockito.spy(new CapabilityGetSingle(rxWear, capability, nodeFilter, null, null));
 
         when(result.getCapability()).thenReturn(capabilityInfo);
         when(result.getStatus()).thenReturn(status);
@@ -384,19 +402,19 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(capabilityApi.getCapability(apiClient, capability, nodeFilter)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, capabilityInfo);
     }
 
     @Test
-    public void CapabilityGetObservable_StatusException() {
+    public void CapabilityGetSingle_StatusException() {
         TestSubscriber<CapabilityInfo> sub = new TestSubscriber<>();
         CapabilityApi.GetCapabilityResult result = Mockito.mock(CapabilityApi.GetCapabilityResult.class);
         int nodeFilter = 0;
         String capability = "capability";
-        CapabilityGetObservable observable = spy(new CapabilityGetObservable(rxWear, capability, nodeFilter, null, null));
+        CapabilityGetSingle single = PowerMockito.spy(new CapabilityGetSingle(rxWear, capability, nodeFilter, null, null));
 
         when(result.getCapability()).thenReturn(capabilityInfo);
         when(result.getStatus()).thenReturn(status);
@@ -404,85 +422,84 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(capabilityApi.getCapability(apiClient, capability, nodeFilter)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // CapabilityAddLocalObservable
+    // CapabilityAddLocalSingle
 
     @Test
-    public void CapabilityAddLocalObservable_Success() {
+    public void CapabilityAddLocalSingle_Success() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
         CapabilityApi.AddLocalCapabilityResult result = Mockito.mock(CapabilityApi.AddLocalCapabilityResult.class);
         String capability = "capability";
-        CapabilityAddLocalObservable observable = spy(new CapabilityAddLocalObservable(rxWear, capability, null, null));
+        CapabilityAddLocalSingle single = PowerMockito.spy(new CapabilityAddLocalSingle(rxWear, capability, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(true);
         when(capabilityApi.addLocalCapability(apiClient, capability)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, status);
     }
 
     @Test
-    public void CapabilityAddLocalObservable_StatusException() {
+    public void CapabilityAddLocalSingle_StatusException() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
         CapabilityApi.AddLocalCapabilityResult result = Mockito.mock(CapabilityApi.AddLocalCapabilityResult.class);
-
         String capability = "capability";
-        CapabilityAddLocalObservable observable = spy(new CapabilityAddLocalObservable(rxWear, capability, null, null));
+        CapabilityAddLocalSingle single = PowerMockito.spy(new CapabilityAddLocalSingle(rxWear, capability, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(false);
         when(capabilityApi.addLocalCapability(apiClient, capability)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // CapabilityAddLocalObservable
+    // CapabilityAddLocalSingle
 
     @Test
-    public void CapabilityRemoveLocalObservable_Success() {
+    public void CapabilityRemoveLocalSingle_Success() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
         CapabilityApi.RemoveLocalCapabilityResult result = Mockito.mock(CapabilityApi.RemoveLocalCapabilityResult.class);
         String capability = "capability";
-        CapabilityRemoveLocalObservable observable = spy(new CapabilityRemoveLocalObservable(rxWear, capability, null, null));
+        CapabilityRemoveLocalSingle single = PowerMockito.spy(new CapabilityRemoveLocalSingle(rxWear, capability, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(true);
         when(capabilityApi.removeLocalCapability(apiClient, capability)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, status);
     }
 
     @Test
-    public void CapabilityRemoveLocalObservable_StatusException() {
+    public void CapabilityRemoveLocalSingle_StatusException() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
         CapabilityApi.RemoveLocalCapabilityResult result = Mockito.mock(CapabilityApi.RemoveLocalCapabilityResult.class);
         String capability = "capability";
-        CapabilityRemoveLocalObservable observable = spy(new CapabilityRemoveLocalObservable(rxWear, capability, null, null));
+        CapabilityRemoveLocalSingle single = PowerMockito.spy(new CapabilityRemoveLocalSingle(rxWear, capability, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(false);
         when(capabilityApi.removeLocalCapability(apiClient, capability)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
@@ -496,7 +513,7 @@ public class RxWearTest {
     @Test
     public void ChannelListenerObservable_Success() {
         TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
-        ChannelListenerObservable observable = spy(new ChannelListenerObservable(rxWear, null, null, null));
+        ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -512,7 +529,7 @@ public class RxWearTest {
     @Test
     public void ChannelListenerObservable_StatusException() {
         TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
-        ChannelListenerObservable observable = spy(new ChannelListenerObservable(rxWear, null, null, null));
+        ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -527,7 +544,7 @@ public class RxWearTest {
     @Test
     public void ChannelListenerObservable_Channel_Success() {
         TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
-        ChannelListenerObservable observable = spy(new ChannelListenerObservable(rxWear, channel, null, null));
+        ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, channel, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -543,7 +560,7 @@ public class RxWearTest {
     @Test
     public void ChannelListenerObservable_Channel_StatusException() {
         TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
-        ChannelListenerObservable observable = spy(new ChannelListenerObservable(rxWear, channel, null, null));
+        ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, channel, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -555,139 +572,139 @@ public class RxWearTest {
         assertError(sub, StatusException.class);
     }
 
-    // ChannelCloseObservable
+    // ChannelCloseSingle
 
     @Test
-    public void ChannelCloseObservable_Success() {
+    public void ChannelCloseSingle_Success() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelCloseObservable observable = spy(new ChannelCloseObservable(rxWear, channel, null, null, null));
+        ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
         when(channel.close(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, status);
     }
 
     @Test
-    public void ChannelCloseObservable_StatusException() {
+    public void ChannelCloseSingle_StatusException() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelCloseObservable observable = spy(new ChannelCloseObservable(rxWear, channel, null, null, null));
+        ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
         when(channel.close(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
     @Test
-    public void ChannelCloseObservable_ErrorCode_Success() {
+    public void ChannelCloseSingle_ErrorCode_Success() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelCloseObservable observable = spy(new ChannelCloseObservable(rxWear, channel, 1, null, null));
+        ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, 1, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
         when(channel.close(apiClient, 1)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, status);
     }
 
     @Test
-    public void ChannelCloseObservable_ErrorCode_StatusException() {
+    public void ChannelCloseSingle_ErrorCode_StatusException() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelCloseObservable observable = spy(new ChannelCloseObservable(rxWear, channel, 1, null, null));
+        ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, 1, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
         when(channel.close(apiClient, 1)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // ChannelSendFileObservable
+    // ChannelSendFileSingle
 
     @Test
-    public void ChannelSendFileObservable_Success() {
+    public void ChannelSendFileSingle_Success() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelSendFileObservable observable = spy(new ChannelSendFileObservable(rxWear, channel, uri, null, null, null, null));
+        ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
         when(channel.sendFile(apiClient, uri)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, status);
     }
 
     @Test
-    public void ChannelSendFileObservable_StatusException() {
+    public void ChannelSendFileSingle_StatusException() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelSendFileObservable observable = spy(new ChannelSendFileObservable(rxWear, channel, uri, null, null, null, null));
+        ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
         when(channel.sendFile(apiClient, uri)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
     @Test
-    public void ChannelSendFileObservable_OffsetLength_Success() {
+    public void ChannelSendFileSingle_OffsetLength_Success() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelSendFileObservable observable = spy(new ChannelSendFileObservable(rxWear, channel, uri, 1l, 2l, null, null));
+        ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, 1l, 2l, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
         when(channel.sendFile(apiClient, uri, 1l, 2l)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, status);
     }
 
     @Test
-    public void ChannelSendFileObservable_OffsetLength_StatusException() {
+    public void ChannelSendFileSingle_OffsetLength_StatusException() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelSendFileObservable observable = spy(new ChannelSendFileObservable(rxWear, channel, uri, 1l, 2l, null, null));
+        ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, 1l, 2l, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
         when(channel.sendFile(apiClient, uri, 1l, 2l)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // ChannelOpenObservable
+    // ChannelOpenSingle
 
     @Test
-    public void ChannelOpenObservable_Success() {
+    public void ChannelOpenSingle_Success() {
         TestSubscriber<Channel> sub = new TestSubscriber<>();
         ChannelApi.OpenChannelResult result = Mockito.mock(ChannelApi.OpenChannelResult.class);
         String nodeId = "nodeId";
         String path ="path";
-        ChannelOpenObservable observable = spy(new ChannelOpenObservable(rxWear, nodeId, path, null, null));
+        ChannelOpenSingle single = PowerMockito.spy(new ChannelOpenSingle(rxWear, nodeId, path, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getChannel()).thenReturn(channel);
@@ -695,19 +712,19 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(channelApi.openChannel(apiClient, nodeId, path)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, channel);
     }
 
     @Test
-    public void ChannelOpenObservable_Success_NoChannel() {
+    public void ChannelOpenSingle_NullChannel_IOException() {
         TestSubscriber<Channel> sub = new TestSubscriber<>();
         ChannelApi.OpenChannelResult result = Mockito.mock(ChannelApi.OpenChannelResult.class);
         String nodeId = "nodeId";
         String path ="path";
-        ChannelOpenObservable observable = spy(new ChannelOpenObservable(rxWear, nodeId, path, null, null));
+        ChannelOpenSingle single = PowerMockito.spy(new ChannelOpenSingle(rxWear, nodeId, path, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getChannel()).thenReturn(null);
@@ -715,21 +732,19 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(channelApi.openChannel(apiClient, nodeId, path)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
-        sub.assertCompleted();
-        sub.assertUnsubscribed();
-        sub.assertNoValues();
+        assertError(sub, IOException.class);
     }
 
     @Test
-    public void ChannelOpenObservable_StatusException() {
+    public void ChannelOpenSingle_StatusException() {
         TestSubscriber<Channel> sub = new TestSubscriber<>();
         ChannelApi.OpenChannelResult result = Mockito.mock(ChannelApi.OpenChannelResult.class);
         String nodeId = "nodeId";
         String path ="path";
-        ChannelOpenObservable observable = spy(new ChannelOpenObservable(rxWear, nodeId, path, null, null));
+        ChannelOpenSingle single = PowerMockito.spy(new ChannelOpenSingle(rxWear, nodeId, path, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getChannel()).thenReturn(channel);
@@ -737,8 +752,8 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(channelApi.openChannel(apiClient, nodeId, path)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
@@ -746,11 +761,11 @@ public class RxWearTest {
     // ChannelGetInputStreamObservable
 
     @Test
-    public void ChannelGetInputStreamObservable_Success() {
+    public void ChannelGetInputStreamSingle_Success() {
         TestSubscriber<InputStream> sub = new TestSubscriber<>();
         Channel.GetInputStreamResult result = Mockito.mock(Channel.GetInputStreamResult.class);
         InputStream inputStream = Mockito.mock(InputStream.class);
-        ChannelGetInputStreamObservable observable = spy(new ChannelGetInputStreamObservable(rxWear, channel, null, null));
+        ChannelGetInputStreamSingle single = PowerMockito.spy(new ChannelGetInputStreamSingle(rxWear, channel, null, null));
 
         when(result.getInputStream()).thenReturn(inputStream);
         when(result.getStatus()).thenReturn(status);
@@ -758,18 +773,18 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(channel.getInputStream(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, inputStream);
     }
 
     @Test
-    public void ChannelGetInputStreamObservable_StatusException() {
+    public void ChannelGetInputStreamSingle_StatusException() {
         TestSubscriber<InputStream> sub = new TestSubscriber<>();
         Channel.GetInputStreamResult result = Mockito.mock(Channel.GetInputStreamResult.class);
         InputStream inputStream = Mockito.mock(InputStream.class);
-        ChannelGetInputStreamObservable observable = spy(new ChannelGetInputStreamObservable(rxWear, channel, null, null));
+        ChannelGetInputStreamSingle single = PowerMockito.spy(new ChannelGetInputStreamSingle(rxWear, channel, null, null));
 
         when(result.getInputStream()).thenReturn(inputStream);
         when(result.getStatus()).thenReturn(status);
@@ -777,20 +792,20 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(channel.getInputStream(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // ChannelGetOutputStreamObservable
+    // ChannelGetOutputStreamSingle
 
     @Test
-    public void ChannelGetOutputStreamObservable_Success() {
+    public void ChannelGetOutputStreamSingle_Success() {
         TestSubscriber<OutputStream> sub = new TestSubscriber<>();
         Channel.GetOutputStreamResult result = Mockito.mock(Channel.GetOutputStreamResult.class);
         OutputStream outputStream = Mockito.mock(OutputStream.class);
-        ChannelGetOutputStreamObservable observable = spy(new ChannelGetOutputStreamObservable(rxWear, channel, null, null));
+        ChannelGetOutputStreamSingle single = PowerMockito.spy(new ChannelGetOutputStreamSingle(rxWear, channel, null, null));
 
         when(result.getOutputStream()).thenReturn(outputStream);
         when(result.getStatus()).thenReturn(status);
@@ -798,18 +813,18 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(channel.getOutputStream(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, outputStream);
     }
 
     @Test
-    public void ChannelGetOutputStreamObservable_StatusException() {
+    public void ChannelGetOutputStreamSingle_StatusException() {
         TestSubscriber<OutputStream> sub = new TestSubscriber<>();
         Channel.GetOutputStreamResult result = Mockito.mock(Channel.GetOutputStreamResult.class);
         OutputStream outputStream = Mockito.mock(OutputStream.class);
-        ChannelGetOutputStreamObservable observable = spy(new ChannelGetOutputStreamObservable(rxWear, channel, null, null));
+        ChannelGetOutputStreamSingle single = PowerMockito.spy(new ChannelGetOutputStreamSingle(rxWear, channel, null, null));
 
         when(result.getOutputStream()).thenReturn(outputStream);
         when(result.getStatus()).thenReturn(status);
@@ -817,40 +832,40 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(channel.getOutputStream(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // ChannelReceiveFileObservable
+    // ChannelReceiveFileSingle
 
     @Test
-    public void ChannelReceiveFileObservable_Success() {
+    public void ChannelReceiveFileSingle_Success() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelReceiveFileObservable observable = spy(new ChannelReceiveFileObservable(rxWear, channel, uri, false, null, null));
+        ChannelReceiveFileSingle single = PowerMockito.spy(new ChannelReceiveFileSingle(rxWear, channel, uri, false, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
         when(channel.receiveFile(apiClient, uri, false)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, status);
     }
 
     @Test
-    public void ChannelReceiveFileObservable_StatusException() {
+    public void ChannelReceiveFileSingle_StatusException() {
         TestSubscriber<Status> sub = new TestSubscriber<>();
-        ChannelReceiveFileObservable observable = spy(new ChannelReceiveFileObservable(rxWear, channel, uri, false, null, null));
+        ChannelReceiveFileSingle single = PowerMockito.spy(new ChannelReceiveFileSingle(rxWear, channel, uri, false, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
         when(channel.receiveFile(apiClient, uri, false)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
@@ -864,7 +879,7 @@ public class RxWearTest {
     @Test
     public void DataListenerObservable_Success() {
         TestSubscriber<DataEvent> sub = new TestSubscriber<>();
-        DataListenerObservable observable = spy(new DataListenerObservable(rxWear, null, null, null, null));
+        DataListenerObservable observable = PowerMockito.spy(new DataListenerObservable(rxWear, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -880,7 +895,7 @@ public class RxWearTest {
     @Test
     public void DataListenerObservable_StatusException() {
         TestSubscriber<DataEvent> sub = new TestSubscriber<>();
-        DataListenerObservable observable = spy(new DataListenerObservable(rxWear, null, null, null, null));
+        DataListenerObservable observable = PowerMockito.spy(new DataListenerObservable(rxWear, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -896,7 +911,7 @@ public class RxWearTest {
     public void DataListenerObservable_Uri_Success() {
         TestSubscriber<DataEvent> sub = new TestSubscriber<>();
         int filterType = 0;
-        DataListenerObservable observable = spy(new DataListenerObservable(rxWear, uri, filterType, null, null));
+        DataListenerObservable observable = PowerMockito.spy(new DataListenerObservable(rxWear, uri, filterType, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -913,7 +928,7 @@ public class RxWearTest {
     public void DataListenerObservable_Uri_StatusException() {
         TestSubscriber<DataEvent> sub = new TestSubscriber<>();
         int filterType = 0;
-        DataListenerObservable observable = spy(new DataListenerObservable(rxWear, uri, filterType, null, null));
+        DataListenerObservable observable = PowerMockito.spy(new DataListenerObservable(rxWear, uri, filterType, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -925,13 +940,13 @@ public class RxWearTest {
         assertError(sub, StatusException.class);
     }
 
-    // DataDeleteItemsObservable
+    // DataDeleteItemsSingle
 
     @Test
     public void DataDeleteItemsObservable_Success() {
         TestSubscriber<Integer> sub = new TestSubscriber<>();
         DataApi.DeleteDataItemsResult result = Mockito.mock(DataApi.DeleteDataItemsResult.class);
-        DataDeleteItemsObservable observable = spy(new DataDeleteItemsObservable(rxWear, uri, null, null, null));
+        DataDeleteItemsSingle single = PowerMockito.spy(new DataDeleteItemsSingle(rxWear, uri, null, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getNumDeleted()).thenReturn(1);
@@ -939,17 +954,17 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(dataApi.deleteDataItems(apiClient, uri)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, 1);
     }
 
     @Test
-    public void DataDeleteItemsObservable_StatusException() {
+    public void DataDeleteItemsSingle_StatusException() {
         TestSubscriber<Integer> sub = new TestSubscriber<>();
         DataApi.DeleteDataItemsResult result = Mockito.mock(DataApi.DeleteDataItemsResult.class);
-        DataDeleteItemsObservable observable = spy(new DataDeleteItemsObservable(rxWear, uri, null, null, null));
+        DataDeleteItemsSingle single = PowerMockito.spy(new DataDeleteItemsSingle(rxWear, uri, null, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getNumDeleted()).thenReturn(1);
@@ -957,18 +972,18 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(dataApi.deleteDataItems(apiClient, uri)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
     @Test
-    public void DataDeleteItemsObservable_FilterType_Success() {
+    public void DataDeleteItemsSingle_FilterType_Success() {
         TestSubscriber<Integer> sub = new TestSubscriber<>();
         DataApi.DeleteDataItemsResult result = Mockito.mock(DataApi.DeleteDataItemsResult.class);
         int filterType = 0;
-        DataDeleteItemsObservable observable = spy(new DataDeleteItemsObservable(rxWear, uri, filterType, null, null));
+        DataDeleteItemsSingle single = PowerMockito.spy(new DataDeleteItemsSingle(rxWear, uri, filterType, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getNumDeleted()).thenReturn(1);
@@ -976,18 +991,18 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(dataApi.deleteDataItems(apiClient, uri, filterType)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, 1);
     }
 
     @Test
-    public void DataDeleteItemsObservable_FilterType_StatusException() {
+    public void DataDeleteItemsSingle_FilterType_StatusException() {
         TestSubscriber<Integer> sub = new TestSubscriber<>();
         DataApi.DeleteDataItemsResult result = Mockito.mock(DataApi.DeleteDataItemsResult.class);
         int filterType = 0;
-        DataDeleteItemsObservable observable = spy(new DataDeleteItemsObservable(rxWear, uri, filterType, null, null));
+        DataDeleteItemsSingle single = PowerMockito.spy(new DataDeleteItemsSingle(rxWear, uri, filterType, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getNumDeleted()).thenReturn(1);
@@ -995,20 +1010,20 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(dataApi.deleteDataItems(apiClient, uri, filterType)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // DataPutItemObservable
+    // DataPutItemSingle
 
     @Test
-    public void DataPutItemObservable_Success() {
+    public void DataPutItemSingle_Success() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
         PutDataRequest putDataRequest = Mockito.mock(PutDataRequest.class);
         DataApi.DataItemResult result = Mockito.mock(DataApi.DataItemResult.class);
-        DataPutItemObservable observable = spy(new DataPutItemObservable(rxWear, putDataRequest, null, null));
+        DataPutItemSingle single = PowerMockito.spy(new DataPutItemSingle(rxWear, putDataRequest, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getDataItem()).thenReturn(dataItem);
@@ -1016,18 +1031,18 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(dataApi.putDataItem(apiClient, putDataRequest)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, dataItem);
     }
 
     @Test
-    public void DataPutItemObservable_StatusException() {
+    public void DataPutItemSingle_StatusException() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
         PutDataRequest putDataRequest = Mockito.mock(PutDataRequest.class);
         DataApi.DataItemResult result = Mockito.mock(DataApi.DataItemResult.class);
-        DataPutItemObservable observable = spy(new DataPutItemObservable(rxWear, putDataRequest, null, null));
+        DataPutItemSingle single = PowerMockito.spy(new DataPutItemSingle(rxWear, putDataRequest, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getDataItem()).thenReturn(dataItem);
@@ -1035,8 +1050,8 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(dataApi.putDataItem(apiClient, putDataRequest)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
@@ -1047,7 +1062,7 @@ public class RxWearTest {
     public void DataGetItemsObservable_Uri_FilterType_Success() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
         int filterType = 0;
-        DataGetItemsObservable observable = spy(new DataGetItemsObservable(rxWear, uri, filterType, null, null));
+        DataGetItemsObservable observable = PowerMockito.spy(new DataGetItemsObservable(rxWear, uri, filterType, null, null));
 
         when(dataItemBuffer.getCount()).thenReturn(0);
         when(dataItemBuffer.getStatus()).thenReturn(status);
@@ -1065,7 +1080,7 @@ public class RxWearTest {
     public void DataGetItemsObservable_Uri_FilterType_StatusException() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
         int filterType = 0;
-        DataGetItemsObservable observable = spy(new DataGetItemsObservable(rxWear, uri, filterType, null, null));
+        DataGetItemsObservable observable = PowerMockito.spy(new DataGetItemsObservable(rxWear, uri, filterType, null, null));
 
         when(dataItemBuffer.getCount()).thenReturn(0);
         when(dataItemBuffer.getStatus()).thenReturn(status);
@@ -1082,7 +1097,7 @@ public class RxWearTest {
     @Test
     public void DataGetItemsObservable_Uri_Success() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
-        DataGetItemsObservable observable = spy(new DataGetItemsObservable(rxWear, uri, null, null, null));
+        DataGetItemsObservable observable = PowerMockito.spy(new DataGetItemsObservable(rxWear, uri, null, null, null));
 
         when(dataItemBuffer.getCount()).thenReturn(0);
         when(dataItemBuffer.getStatus()).thenReturn(status);
@@ -1099,7 +1114,7 @@ public class RxWearTest {
     @Test
     public void DataGetItemsObservable_Uri_StatusException() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
-        DataGetItemsObservable observable = spy(new DataGetItemsObservable(rxWear, uri, null, null, null));
+        DataGetItemsObservable observable = PowerMockito.spy(new DataGetItemsObservable(rxWear, uri, null, null, null));
 
         when(dataItemBuffer.getCount()).thenReturn(0);
         when(dataItemBuffer.getStatus()).thenReturn(status);
@@ -1116,7 +1131,7 @@ public class RxWearTest {
     @Test
     public void DataGetItemsObservable_Success() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
-        DataGetItemsObservable observable = spy(new DataGetItemsObservable(rxWear, uri, null, null, null));
+        DataGetItemsObservable observable = PowerMockito.spy(new DataGetItemsObservable(rxWear, uri, null, null, null));
 
         when(dataItemBuffer.getCount()).thenReturn(0);
         when(dataItemBuffer.getStatus()).thenReturn(status);
@@ -1133,7 +1148,7 @@ public class RxWearTest {
     @Test
     public void DataGetItemsObservable_StatusException() {
         TestSubscriber<DataItem> sub = new TestSubscriber<>();
-        DataGetItemsObservable observable = spy(new DataGetItemsObservable(rxWear, null, null, null, null));
+        DataGetItemsObservable observable = PowerMockito.spy(new DataGetItemsObservable(rxWear, null, null, null, null));
 
         when(dataItemBuffer.getCount()).thenReturn(0);
         when(dataItemBuffer.getStatus()).thenReturn(status);
@@ -1147,76 +1162,76 @@ public class RxWearTest {
         assertError(sub, StatusException.class);
     }
 
-    // DataGetFdForAssetObservable
+    // DataGetFdForAssetSingle
 
     @Test
-    public void DataGetFdForAssetObservable_DataItemAsset_Success() {
+    public void DataGetFdForAssetSingle_DataItemAsset_Success() {
         TestSubscriber<DataApi.GetFdForAssetResult> sub = new TestSubscriber<>();
         DataItemAsset dataItemAsset = Mockito.mock(DataItemAsset.class);
         DataApi.GetFdForAssetResult result = Mockito.mock(DataApi.GetFdForAssetResult.class);
-        DataGetFdForAssetObservable observable = spy(new DataGetFdForAssetObservable(rxWear, dataItemAsset, null, null, null));
+        DataGetFdForAssetSingle single = PowerMockito.spy(new DataGetFdForAssetSingle(rxWear, dataItemAsset, null, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(true);
         when(dataApi.getFdForAsset(apiClient, dataItemAsset)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, result);
     }
 
     @Test
-    public void DataGetFdForAssetObservable_DataItemAsset_StatusException() {
+    public void DataGetFdForAssetSingle_DataItemAsset_StatusException() {
         TestSubscriber<DataApi.GetFdForAssetResult> sub = new TestSubscriber<>();
         DataItemAsset dataItemAsset = Mockito.mock(DataItemAsset.class);
         DataApi.GetFdForAssetResult result = Mockito.mock(DataApi.GetFdForAssetResult.class);
-        DataGetFdForAssetObservable observable = spy(new DataGetFdForAssetObservable(rxWear, dataItemAsset, null, null, null));
+        DataGetFdForAssetSingle single = PowerMockito.spy(new DataGetFdForAssetSingle(rxWear, dataItemAsset, null, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(false);
         when(dataApi.getFdForAsset(apiClient, dataItemAsset)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
     @Test
-    public void DataGetFdForAssetObservable_Asset_Success() {
+    public void DataGetFdForAssetSingle_Asset_Success() {
         TestSubscriber<DataApi.GetFdForAssetResult> sub = new TestSubscriber<>();
         Asset asset = Mockito.mock(Asset.class);
         DataApi.GetFdForAssetResult result = Mockito.mock(DataApi.GetFdForAssetResult.class);
-        DataGetFdForAssetObservable observable = spy(new DataGetFdForAssetObservable(rxWear, null, asset, null, null));
+        DataGetFdForAssetSingle single = PowerMockito.spy(new DataGetFdForAssetSingle(rxWear, null, asset, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(true);
         when(dataApi.getFdForAsset(apiClient, asset)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, result);
     }
 
     @Test
-    public void DataGetFdForAssetObservable_Asset_StatusException() {
+    public void DataGetFdForAssetSingle_Asset_StatusException() {
         TestSubscriber<DataApi.GetFdForAssetResult> sub = new TestSubscriber<>();
         Asset asset = Mockito.mock(Asset.class);
         DataApi.GetFdForAssetResult result = Mockito.mock(DataApi.GetFdForAssetResult.class);
-        DataGetFdForAssetObservable observable = spy(new DataGetFdForAssetObservable(rxWear, null, asset, null, null));
+        DataGetFdForAssetSingle single = PowerMockito.spy(new DataGetFdForAssetSingle(rxWear, null, asset, null, null));
 
         when(result.getStatus()).thenReturn(status);
         setPendingResultValue(result);
         when(status.isSuccess()).thenReturn(false);
         when(dataApi.getFdForAsset(apiClient, asset)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
@@ -1231,7 +1246,7 @@ public class RxWearTest {
     @Test
     public void MessageListenerObservable_Success() {
         TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
-        MessageListenerObservable observable = spy(new MessageListenerObservable(rxWear, null, null, null, null));
+        MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -1247,7 +1262,7 @@ public class RxWearTest {
     @Test
     public void MessageListenerObservable_StatusException() {
         TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
-        MessageListenerObservable observable = spy(new MessageListenerObservable(rxWear, null, null, null, null));
+        MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, null, null, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -1263,7 +1278,7 @@ public class RxWearTest {
     public void MessageListenerObservable_Uri_Success() {
         TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
         int filterType = 0;
-        MessageListenerObservable observable = spy(new MessageListenerObservable(rxWear, uri, filterType, null, null));
+        MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, uri, filterType, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -1280,7 +1295,7 @@ public class RxWearTest {
     public void MessageListenerObservable_Uri_StatusException() {
         TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
         int filterType = 0;
-        MessageListenerObservable observable = spy(new MessageListenerObservable(rxWear, uri, filterType, null, null));
+        MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, uri, filterType, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -1292,16 +1307,16 @@ public class RxWearTest {
         assertError(sub, StatusException.class);
     }
 
-    // MessageSendObservable
+    // MessageSendSingle
 
     @Test
-    public void MessageSendObservable_Success() {
+    public void MessageSendSingle_Success() {
         TestSubscriber<Integer> sub = new TestSubscriber<>();
         MessageApi.SendMessageResult result = Mockito.mock(MessageApi.SendMessageResult.class);
         String nodeId = "nodeId";
         String path = "path";
         byte[] data = new byte[] {};
-        MessageSendObservable observable = spy(new MessageSendObservable(rxWear, nodeId, path, data, null, null));
+        MessageSendSingle single = PowerMockito.spy(new MessageSendSingle(rxWear, nodeId, path, data, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getRequestId()).thenReturn(1);
@@ -1309,20 +1324,20 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(messageApi.sendMessage(apiClient, nodeId, path, data)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, 1);
     }
 
     @Test
-    public void MessageSendObservable_StatusException() {
+    public void MessageSendSingle_StatusException() {
         TestSubscriber<Integer> sub = new TestSubscriber<>();
         MessageApi.SendMessageResult result = Mockito.mock(MessageApi.SendMessageResult.class);
         String nodeId = "nodeId";
         String path = "path";
         byte[] data = new byte[] {};
-        MessageSendObservable observable = spy(new MessageSendObservable(rxWear, nodeId, path, data, null, null));
+        MessageSendSingle single = PowerMockito.spy(new MessageSendSingle(rxWear, nodeId, path, data, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getRequestId()).thenReturn(1);
@@ -1330,8 +1345,8 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(messageApi.sendMessage(apiClient, nodeId, path, data)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
@@ -1345,7 +1360,7 @@ public class RxWearTest {
     @Test
     public void NodeListenerObservable_Success() {
         TestSubscriber<NodeEvent> sub = new TestSubscriber<>();
-        NodeListenerObservable observable = spy(new NodeListenerObservable(rxWear, null, null));
+        NodeListenerObservable observable = PowerMockito.spy(new NodeListenerObservable(rxWear, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(true);
@@ -1361,7 +1376,7 @@ public class RxWearTest {
     @Test
     public void NodeListenerObservable_StatusException() {
         TestSubscriber<NodeEvent> sub = new TestSubscriber<>();
-        NodeListenerObservable observable = spy(new NodeListenerObservable(rxWear, null, null));
+        NodeListenerObservable observable = PowerMockito.spy(new NodeListenerObservable(rxWear, null, null));
 
         setPendingResultValue(status);
         when(status.isSuccess()).thenReturn(false);
@@ -1373,13 +1388,13 @@ public class RxWearTest {
         assertError(sub, StatusException.class);
     }
 
-    // NodeGetConnectedObservable
+    // NodeGetConnectedSingle
 
     @Test
-    public void NodeGetConnectedObservable_Success() {
+    public void NodeGetConnectedSingle_Success() {
         TestSubscriber<List<Node>> sub = new TestSubscriber<>();
         NodeApi.GetConnectedNodesResult result = Mockito.mock(NodeApi.GetConnectedNodesResult.class);
-        NodeGetConnectedObservable observable = spy(new NodeGetConnectedObservable(rxWear, null, null));
+        NodeGetConnectedSingle single = PowerMockito.spy(new NodeGetConnectedSingle(rxWear, null, null));
 
         List<Node> nodeList = new ArrayList<>();
 
@@ -1389,17 +1404,17 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(nodeApi.getConnectedNodes(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, nodeList);
     }
 
     @Test
-    public void NodeGetConnectedObservable_StatusException() {
+    public void NodeGetConnectedSingle_StatusException() {
         TestSubscriber<List<Node>> sub = new TestSubscriber<>();
         NodeApi.GetConnectedNodesResult result = Mockito.mock(NodeApi.GetConnectedNodesResult.class);
-        NodeGetConnectedObservable observable = spy(new NodeGetConnectedObservable(rxWear, null, null));
+        NodeGetConnectedSingle single = PowerMockito.spy(new NodeGetConnectedSingle(rxWear, null, null));
 
         List<Node> nodeList = new ArrayList<>();
 
@@ -1409,20 +1424,20 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(nodeApi.getConnectedNodes(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }
 
-    // NodeGetLocalObservable
+    // NodeGetLocalSingle
 
     @Test
-    public void NodeGetLocalObservable_Success() {
+    public void NodeGetLocalSingle_Success() {
         TestSubscriber<Node> sub = new TestSubscriber<>();
         NodeApi.GetLocalNodeResult result = Mockito.mock(NodeApi.GetLocalNodeResult.class);
         Node node = Mockito.mock(Node.class);
-        NodeGetLocalObservable observable = spy(new NodeGetLocalObservable(rxWear, null, null));
+        NodeGetLocalSingle single = PowerMockito.spy(new NodeGetLocalSingle(rxWear, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getNode()).thenReturn(node);
@@ -1430,18 +1445,18 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(true);
         when(nodeApi.getLocalNode(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertSingleValue(sub, node);
     }
 
     @Test
-    public void NodeGetLocalObservable_StatusException() {
+    public void NodeGetLocalSingle_StatusException() {
         TestSubscriber<Node> sub = new TestSubscriber<>();
         NodeApi.GetLocalNodeResult result = Mockito.mock(NodeApi.GetLocalNodeResult.class);
         Node node = Mockito.mock(Node.class);
-        NodeGetLocalObservable observable = spy(new NodeGetLocalObservable(rxWear, null, null));
+        NodeGetLocalSingle single = PowerMockito.spy(new NodeGetLocalSingle(rxWear, null, null));
 
         when(result.getStatus()).thenReturn(status);
         when(result.getNode()).thenReturn(node);
@@ -1449,8 +1464,8 @@ public class RxWearTest {
         when(status.isSuccess()).thenReturn(false);
         when(nodeApi.getLocalNode(apiClient)).thenReturn(pendingResult);
 
-        setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        setupBaseSingleSuccess(single);
+        Single.create(single).subscribe(sub);
 
         assertError(sub, StatusException.class);
     }

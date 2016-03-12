@@ -1,17 +1,16 @@
 package com.patloew.rxwear;
 
-import android.net.Uri;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.wearable.CapabilityApi;
 import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -26,25 +25,24 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataGetItemObservable extends BaseObservable<DataItem> {
+public class CapabilityAddLocalSingle extends BaseSingle<Status> {
 
-    private final Uri uri;
+    private final String capability;
 
-    DataGetItemObservable(RxWear rxWear, Uri uri, Long timeout, TimeUnit timeUnit) {
+    CapabilityAddLocalSingle(RxWear rxWear, String capability, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
-        this.uri = uri;
+        this.capability = capability;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super DataItem> observer) {
-        setupWearPendingResult(Wearable.DataApi.getDataItem(apiClient, uri), new ResultCallback<DataApi.DataItemResult>() {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
+        setupWearPendingResult(Wearable.CapabilityApi.addLocalCapability(apiClient, capability), new ResultCallback<CapabilityApi.AddLocalCapabilityResult>() {
             @Override
-            public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
-                if (!dataItemResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(dataItemResult.getStatus()));
+            public void onResult(@NonNull CapabilityApi.AddLocalCapabilityResult addLocalCapabilityResult) {
+                if (!addLocalCapabilityResult.getStatus().isSuccess()) {
+                    subscriber.onError(new StatusException(addLocalCapabilityResult.getStatus()));
                 } else {
-                    observer.onNext(dataItemResult.getDataItem().freeze());
-                    observer.onCompleted();
+                    subscriber.onSuccess(addLocalCapabilityResult.getStatus());
                 }
             }
         });

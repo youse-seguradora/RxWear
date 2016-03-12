@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.Channel;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -23,21 +23,29 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelReceiveFileObservable extends BaseObservable<Status> {
+public class ChannelSendFileSingle extends BaseSingle<Status> {
 
     private final Channel channel;
     private final Uri uri;
-    private final boolean append;
+    private final Long startOffset;
+    private final Long length;
 
-    ChannelReceiveFileObservable(RxWear rxWear, Channel channel, Uri uri, boolean append, Long timeout, TimeUnit timeUnit) {
+    ChannelSendFileSingle(RxWear rxWear, Channel channel, Uri uri, Long startOffset, Long length, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.channel = channel;
         this.uri = uri;
-        this.append = append;
+        this.startOffset = startOffset;
+        this.length = length;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Status> observer) {
-        setupWearPendingResult(channel.receiveFile(apiClient, uri, append), new StatusResultCallBack(observer));
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
+        StatusResultCallBack resultCallBack = new StatusResultCallBack(subscriber);
+
+        if(startOffset != null && length != null) {
+            setupWearPendingResult(channel.sendFile(apiClient, uri, startOffset, length), resultCallBack);
+        } else {
+            setupWearPendingResult(channel.sendFile(apiClient, uri), resultCallBack);
+        }
     }
 }

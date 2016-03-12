@@ -12,7 +12,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.Subscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -43,11 +43,11 @@ public class CapabilityListenerObservable extends BaseObservable<CapabilityInfo>
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super CapabilityInfo> observer) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super CapabilityInfo> subscriber) {
         listener = new CapabilityApi.CapabilityListener() {
             @Override
             public void onCapabilityChanged(CapabilityInfo capabilityInfo) {
-                observer.onNext(capabilityInfo);
+                subscriber.onNext(capabilityInfo);
             }
         };
 
@@ -55,7 +55,7 @@ public class CapabilityListenerObservable extends BaseObservable<CapabilityInfo>
             @Override
             public void onResult(@NonNull Status status) {
                 if (!status.isSuccess()) {
-                    observer.onError(new StatusException(status));
+                    subscriber.onError(new StatusException(status));
                 }
             }
         };

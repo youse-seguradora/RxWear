@@ -7,8 +7,8 @@ import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
 
-import rx.Observable;
-import rx.Observer;
+import rx.Single;
+import rx.SingleSubscriber;
 
 /* Copyright (C) 2015 Michał Charmas (http://blog.charmas.pl)
  *
@@ -29,24 +29,23 @@ import rx.Observer;
  * FILE MODIFIED by Patrick Löwenstein, 2016
  *
  */
-public class GoogleAPIClientObservable extends BaseObservable<GoogleApiClient> {
+public class GoogleAPIClientSingle extends BaseSingle<GoogleApiClient> {
 
     @SafeVarargs
-    public static Observable<GoogleApiClient> create(@NonNull Context context, @NonNull Api<? extends Api.ApiOptions.NotRequiredOptions>... apis) {
-        return Observable.create(new GoogleAPIClientObservable(context, apis, null));
+    public static Single<GoogleApiClient> create(@NonNull Context context, @NonNull Api<? extends Api.ApiOptions.NotRequiredOptions>... apis) {
+        return Single.create(new GoogleAPIClientSingle(context, apis, null));
     }
 
-    public static Observable<GoogleApiClient> create(@NonNull Context context, @NonNull Api<? extends Api.ApiOptions.NotRequiredOptions>[] apis, Scope[] scopes) {
-        return Observable.create(new GoogleAPIClientObservable(context, apis, scopes));
+    public static Single<GoogleApiClient> create(@NonNull Context context, @NonNull Api<? extends Api.ApiOptions.NotRequiredOptions>[] apis, Scope[] scopes) {
+        return Single.create(new GoogleAPIClientSingle(context, apis, scopes));
     }
 
-    GoogleAPIClientObservable(Context ctx, Api<? extends Api.ApiOptions.NotRequiredOptions>[] apis, Scope[] scopes) {
+    GoogleAPIClientSingle(Context ctx, Api<? extends Api.ApiOptions.NotRequiredOptions>[] apis, Scope[] scopes) {
         super(ctx, apis, scopes);
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, Observer<? super GoogleApiClient> observer) {
-        observer.onNext(apiClient);
-        observer.onCompleted();
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleSubscriber<? super GoogleApiClient> observer) {
+        observer.onSuccess(apiClient);
     }
 }

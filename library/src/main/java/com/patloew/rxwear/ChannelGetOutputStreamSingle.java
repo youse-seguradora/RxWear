@@ -6,10 +6,10 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Channel;
 
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -24,25 +24,24 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelGetInputStreamObservable extends BaseObservable<InputStream> {
+public class ChannelGetOutputStreamSingle extends BaseSingle<OutputStream> {
 
     private final Channel channel;
 
-    ChannelGetInputStreamObservable(RxWear rxWear, Channel channel, Long timeout, TimeUnit timeUnit) {
+    ChannelGetOutputStreamSingle(RxWear rxWear, Channel channel, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.channel = channel;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super InputStream> observer) {
-        setupWearPendingResult(channel.getInputStream(apiClient), new ResultCallback<Channel.GetInputStreamResult>() {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super OutputStream> subscriber) {
+        setupWearPendingResult(channel.getOutputStream(apiClient), new ResultCallback<Channel.GetOutputStreamResult>() {
             @Override
-            public void onResult(@NonNull Channel.GetInputStreamResult getInputStreamResult) {
-                if (!getInputStreamResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(getInputStreamResult.getStatus()));
+            public void onResult(@NonNull Channel.GetOutputStreamResult getOutputStreamResult) {
+                if (!getOutputStreamResult.getStatus().isSuccess()) {
+                    subscriber.onError(new StatusException(getOutputStreamResult.getStatus()));
                 } else {
-                    observer.onNext(getInputStreamResult.getInputStream());
-                    observer.onCompleted();
+                    subscriber.onSuccess(getOutputStreamResult.getOutputStream());
                 }
             }
         });

@@ -6,7 +6,7 @@ import com.google.android.gms.wearable.Channel;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -21,20 +21,20 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelCloseObservable extends BaseObservable<Status> {
+public class ChannelCloseSingle extends BaseSingle<Status> {
 
     private final Channel channel;
     private final Integer errorCode;
 
-    ChannelCloseObservable(RxWear rxWear, Channel channel, Integer errorCode, Long timeout, TimeUnit timeUnit) {
+    ChannelCloseSingle(RxWear rxWear, Channel channel, Integer errorCode, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.channel = channel;
         this.errorCode = errorCode;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Status> observer) {
-        StatusResultCallBack resultCallBack = new StatusResultCallBack(observer);
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
+        StatusResultCallBack resultCallBack = new StatusResultCallBack(subscriber);
 
         if(errorCode != null) {
             setupWearPendingResult(channel.close(apiClient, errorCode), resultCallBack);

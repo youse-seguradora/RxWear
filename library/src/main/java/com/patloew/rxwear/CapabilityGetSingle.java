@@ -4,13 +4,13 @@ import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.CapabilityApi;
+import com.google.android.gms.wearable.CapabilityInfo;
 import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -25,25 +25,26 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class CapabilityAddLocalObservable extends BaseObservable<Status> {
+public class CapabilityGetSingle extends BaseSingle<CapabilityInfo> {
 
     private final String capability;
+    private final int nodeFilter;
 
-    CapabilityAddLocalObservable(RxWear rxWear, String capability, Long timeout, TimeUnit timeUnit) {
+    CapabilityGetSingle(RxWear rxWear, String capability, int nodeFilter, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
         this.capability = capability;
+        this.nodeFilter = nodeFilter;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super Status> observer) {
-        setupWearPendingResult(Wearable.CapabilityApi.addLocalCapability(apiClient, capability), new ResultCallback<CapabilityApi.AddLocalCapabilityResult>() {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super CapabilityInfo> subscriber) {
+        setupWearPendingResult(Wearable.CapabilityApi.getCapability(apiClient, capability, nodeFilter), new ResultCallback<CapabilityApi.GetCapabilityResult>() {
             @Override
-            public void onResult(@NonNull CapabilityApi.AddLocalCapabilityResult addLocalCapabilityResult) {
-                if (!addLocalCapabilityResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(addLocalCapabilityResult.getStatus()));
+            public void onResult(@NonNull CapabilityApi.GetCapabilityResult getCapabilitiesResult) {
+                if (!getCapabilitiesResult.getStatus().isSuccess()) {
+                    subscriber.onError(new StatusException(getCapabilitiesResult.getStatus()));
                 } else {
-                    observer.onNext(addLocalCapabilityResult.getStatus());
-                    observer.onCompleted();
+                    subscriber.onSuccess(getCapabilitiesResult.getCapability());
                 }
             }
         });

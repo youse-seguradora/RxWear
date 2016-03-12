@@ -4,14 +4,12 @@ import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Wearable;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observer;
+import rx.SingleSubscriber;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -26,25 +24,30 @@ import rx.Observer;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class NodeGetConnectedObservable extends BaseObservable<List<Node>> {
+public class MessageSendSingle extends BaseSingle<Integer> {
 
-    NodeGetConnectedObservable(RxWear rxWear, Long timeout, TimeUnit timeUnit) {
+    private final String nodeId;
+    private final String path;
+    private final byte[] data;
+
+    MessageSendSingle(RxWear rxWear, String nodeId, String path, byte[] data, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
+        this.nodeId = nodeId;
+        this.path = path;
+        this.data = data;
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Observer<? super List<Node>> observer) {
-        setupWearPendingResult(Wearable.NodeApi.getConnectedNodes(apiClient), new ResultCallback<NodeApi.GetConnectedNodesResult>() {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Integer> subscriber) {
+        setupWearPendingResult(Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data), new ResultCallback<MessageApi.SendMessageResult>() {
             @Override
-            public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
-                if (!getConnectedNodesResult.getStatus().isSuccess()) {
-                    observer.onError(new StatusException(getConnectedNodesResult.getStatus()));
+            public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
+                if (!sendMessageResult.getStatus().isSuccess()) {
+                    subscriber.onError(new StatusException(sendMessageResult.getStatus()));
                 } else {
-                    observer.onNext(getConnectedNodesResult.getNodes());
-                    observer.onCompleted();
+                    subscriber.onSuccess(sendMessageResult.getRequestId());
                 }
             }
         });
-
     }
 }
