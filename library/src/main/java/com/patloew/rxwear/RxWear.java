@@ -368,6 +368,14 @@ public class RxWear {
             return listenInternal(uri, filterType, timeout, timeUnit);
         }
 
+        public static Observable<DataEvent> listen(@NonNull String path, int filterType) {
+            return listenInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, null, null);
+        }
+
+        public static Observable<DataEvent> listen(@NonNull String path, int filterType, long timeout, @NonNull TimeUnit timeUnit) {
+            return listenInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, timeout, timeUnit);
+        }
+
         private static Observable<DataEvent> listenInternal(Uri uri, Integer filterType, Long timeout, TimeUnit timeUnit) {
             return Observable.create(new DataListenerObservable(RxWear.get(), uri, filterType, timeout, timeUnit));
         }
@@ -419,10 +427,14 @@ public class RxWear {
 
         // getSingle
 
+        @Deprecated
+        // use get() instead
         public static Single<DataItem> getSingle(@NonNull Uri uri) {
             return getSingleInternal(uri, null, null);
         }
 
+        @Deprecated
+        // use get() instead
         public static Single<DataItem> getSingle(@NonNull Uri uri, long timeout, @NonNull TimeUnit timeUnit) {
             return getSingleInternal(uri, timeout, timeUnit);
         }
@@ -441,12 +453,28 @@ public class RxWear {
             return getInternal(uri, filterType, timeout, timeUnit);
         }
 
+        public static Observable<DataItem> get(@NonNull String path, int filterType) {
+            return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, null, null);
+        }
+
+        public static Observable<DataItem> get(@NonNull String path, int filterType, long timeout, @NonNull TimeUnit timeUnit) {
+            return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, timeout, timeUnit);
+        }
+
         public static Observable<DataItem> get(@NonNull Uri uri) {
             return getInternal(uri, null, null, null);
         }
 
         public static Observable<DataItem> get(@NonNull Uri uri, long timeout, @NonNull TimeUnit timeUnit) {
             return getInternal(uri, null, timeout, timeUnit);
+        }
+
+        public static Observable<DataItem> get(@NonNull String path) {
+            return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), null, null, null);
+        }
+
+        public static Observable<DataItem> get(@NonNull String path, long timeout, @NonNull TimeUnit timeUnit) {
+            return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), null, timeout, timeUnit);
         }
 
         public static Observable<DataItem> get() {
@@ -663,6 +691,10 @@ public class RxWear {
             public Single<DataItem> toSingle() {
                 return putInternal(request.asPutDataRequest(), null, null);
             }
+
+            public Observable<DataItem> toObservable() {
+                return putInternal(request.asPutDataRequest(), null, null).toObservable();
+            }
         }
 
     }
@@ -687,6 +719,14 @@ public class RxWear {
 
         public static Observable<MessageEvent> listen(@NonNull Uri uri, int filterType, long timeout, @NonNull TimeUnit timeUnit) {
             return listenInternal(uri, filterType, timeout, timeUnit);
+        }
+
+        public static Observable<MessageEvent> listen(@NonNull String path, int filterType) {
+            return listenInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, null, null);
+        }
+
+        public static Observable<MessageEvent> listen(@NonNull String path, int filterType, long timeout, @NonNull TimeUnit timeUnit) {
+            return listenInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, timeout, timeUnit);
         }
 
         private static Observable<MessageEvent> listenInternal(Uri uri, Integer filterType, Long timeout, TimeUnit timeUnit) {

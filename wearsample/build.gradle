@@ -37,7 +37,7 @@ dependencies {
     compile project(':library')
     //compile 'com.patloew.rxwear:rxwear:1.1.0'
 
-    compile 'io.reactivex:rxjava:1.1.1'
-    compile 'io.reactivex:rxandroid:1.1.0'
+    compile 'io.reactivex:rxjava:1.1.5'
+    compile 'io.reactivex:rxandroid:1.2.0'
     compile 'com.jakewharton.rxbinding:rxbinding:0.4.0'
 }

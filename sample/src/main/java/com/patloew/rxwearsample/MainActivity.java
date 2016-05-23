@@ -14,7 +14,7 @@ import android.widget.EditText;
 import com.jakewharton.rxbinding.view.RxView;
 import com.patloew.rxwear.GoogleAPIConnectionException;
 import com.patloew.rxwear.RxWear;
-import com.patloew.rxwear.transformers.DataItemGetSerializable;
+import com.patloew.rxwear.transformers.DataItemGetDataMap;
 
 import rx.Observable;
 import rx.subscriptions.CompositeSubscription;
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
         subscription.add(RxView.clicks(setPersistentButton)
                 .doOnNext(click -> hideKeyboard())
-                .flatMap(click2 -> RxWear.Data.PutSerializable.urgentTo("/persistentText", persistentEditText.getText().toString()).toObservable())
+                .flatMap(click2 -> RxWear.Data.PutDataMap.to("/persistentText").setUrgent().putString("text", persistentEditText.getText().toString()).toObservable())
                 .subscribe(dataItem1 -> Snackbar.make(coordinatorLayout, "Set persistent text", Snackbar.LENGTH_LONG).show(),
                         throwable -> {
                             Log.e("MainActivity", "Error on setting persistent text", throwable);
@@ -81,8 +81,9 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }));
 
-        subscription.add(RxWear.Data.get()
-                .compose(DataItemGetSerializable.<String>filterByPath("/persistentText"))
+        subscription.add(RxWear.Data.get("/persistentText")
+                .compose(DataItemGetDataMap.noFilter())
+                .map(dataMap -> dataMap.getString("text"))
                 .subscribe(text -> persistentEditText.setText(text)));
     }
 

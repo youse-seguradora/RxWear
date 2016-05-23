@@ -6,12 +6,15 @@ import android.support.wearable.view.BoxInsetLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.MessageApi;
 import com.patloew.rxwear.RxWear;
-import com.patloew.rxwear.transformers.DataEventGetSerializable;
-import com.patloew.rxwear.transformers.DataItemGetSerializable;
+import com.patloew.rxwear.transformers.DataEventGetDataMap;
+import com.patloew.rxwear.transformers.DataItemGetDataMap;
 import com.patloew.rxwear.transformers.MessageEventGetDataMap;
 
+import rx.Observable;
 import rx.subscriptions.CompositeSubscription;
 
 public class MainActivity extends WearableActivity {
@@ -36,22 +39,21 @@ public class MainActivity extends WearableActivity {
 
         RxWear.init(this);
 
-        subscription.add(RxWear.Message.listen()
-                .compose(MessageEventGetDataMap.filterByPath("/message"))
+        subscription.add(RxWear.Message.listen("/message", MessageApi.FILTER_LITERAL)
+                .compose(MessageEventGetDataMap.noFilter())
                 .subscribe(dataMap -> {
                     mTitleText.setText(dataMap.getString("title", getString(R.string.no_message)));
                     mMessageText.setText(dataMap.getString("message", getString(R.string.no_message_info)));
                 }, throwable -> Toast.makeText(this, "Error on message listen", Toast.LENGTH_LONG)));
 
-        subscription.add(RxWear.Data.listen()
-                .compose(DataEventGetSerializable.<String>filterByPathAndType("/persistentText", DataEvent.TYPE_CHANGED))
+        subscription.add(
+                Observable.concat(
+                        RxWear.Data.get("/persistentText").compose(DataItemGetDataMap.noFilter()),
+                        RxWear.Data.listen("/persistentText", DataApi.FILTER_LITERAL).compose(DataEventGetDataMap.filterByType(DataEvent.TYPE_CHANGED))
+                ).map(dataMap -> dataMap.getString("text"))
                 .subscribe(text -> mPersistentText.setText(text),
-                        throwable -> Toast.makeText(this, "Error on data listen", Toast.LENGTH_LONG)));
-
-        subscription.add(RxWear.Data.get()
-                .compose(DataItemGetSerializable.<String>filterByPath("/persistentText"))
-                .subscribe(text -> mPersistentText.setText(text),
-                        throwable -> Toast.makeText(this, "Error on getting DataItem", Toast.LENGTH_LONG)));
+                        throwable -> Toast.makeText(this, "Error on data listen", Toast.LENGTH_LONG))
+        );
     }
 
     @Override
