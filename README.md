@@ -44,16 +44,16 @@ RxWear.Data.PutSerializable.urgentTo("/serializable", serializable)
 
 // Wear App
 
-RxWear.Message.listen()
-        .compose(MessageEventGetDataMap.filterByPath("/dataMap"))
+RxWear.Message.listen("/dataMap", MessageApi.FILTER_LITERAL)
+        .compose(MessageEventGetDataMap.noFilter())
         .subscribe(dataMap -> {
             String title = dataMap.getString("title", getString(R.string.no_message));
             String message = dataMap.getString("message", getString(R.string.no_message_info));
             /* do something */
         });
 
-RxWear.Data.listen()
-        .compose(DataEventGetSerializable.<MySerializableType>filterByPathAndType("/serializable", DataEvent.TYPE_CHANGED))
+RxWear.Data.listen("/serializable", DataApi.FILTER_LITERAL)
+        .compose(DataEventGetSerializable.<MySerializableType>filterByType(DataEvent.TYPE_CHANGED))
         .subscribe(serializable -> {
             /* do something */
         });
