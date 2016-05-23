@@ -2,6 +2,7 @@ package com.patloew.rxwear.transformers;
 
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
 
 import rx.Observable;
 import rx.functions.Func1;
@@ -88,7 +89,7 @@ public class DataEventGetDataMap implements Observable.Transformer<DataEvent, Da
         return observable.map(new Func1<DataEvent, DataMap>() {
             @Override
             public DataMap call(DataEvent dataEvent) {
-                return DataMap.fromByteArray(dataEvent.getDataItem().getData());
+                return DataMapItem.fromDataItem(dataEvent.getDataItem()).getDataMap();
             }
         });
     }
