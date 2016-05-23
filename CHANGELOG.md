@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 1.2.0
+
+* Added `PutDataMap.toObservable()`.
+* Deprecated `RxWear.Data.getSingle()`. Use `RxWear.Data.get()` instead.
+* Added convenience methods to `RxWear.Data` and `RxWear.Message` to directly filter out DataItems/MessageEvents by path.
+* Fixed issue #1, which was caused by Wearable API issue [74204](https://code.google.com/p/android/issues/detail?id=74204)
+
 ## Version 1.1.0
 
 * BREAKING CHANGE: The lib now uses Singles instead of Observables if only one item is emitted.

@@ -79,7 +79,7 @@ A basic sample app is available in the `sample` and `wearsample` projects.
 The lib is available on jCenter. Add the following to your `build.gradle`:
 
 	dependencies {
-	    compile 'com.patloew.rxwear:rxwear:1.1.0'
+	    compile 'com.patloew.rxwear:rxwear:1.2.0'
 	}
 
 # Credits
