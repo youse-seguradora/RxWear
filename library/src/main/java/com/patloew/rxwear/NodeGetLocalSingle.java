@@ -1,9 +1,6 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
@@ -25,7 +22,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class NodeGetLocalSingle extends BaseSingle<Node> {
+class NodeGetLocalSingle extends BaseSingle<Node> {
 
     NodeGetLocalSingle(RxWear rxWear, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
@@ -33,16 +30,9 @@ public class NodeGetLocalSingle extends BaseSingle<Node> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Node> subscriber) {
-        setupWearPendingResult(Wearable.NodeApi.getLocalNode(apiClient), new ResultCallback<NodeApi.GetLocalNodeResult>() {
-            @Override
-            public void onResult(@NonNull NodeApi.GetLocalNodeResult getLocalNodeResult) {
-                if (!getLocalNodeResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(getLocalNodeResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(getLocalNodeResult.getNode());
-                }
-            }
-        });
-
+        setupWearPendingResult(
+                Wearable.NodeApi.getLocalNode(apiClient),
+                SingleResultCallBack.get(subscriber, NodeApi.GetLocalNodeResult::getNode)
+        );
     }
 }

@@ -1,7 +1,5 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Asset;
@@ -26,7 +24,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataGetFdForAssetSingle extends BaseSingle<DataApi.GetFdForAssetResult> {
+class DataGetFdForAssetSingle extends BaseSingle<DataApi.GetFdForAssetResult> {
 
     private final DataItemAsset dataItemAsset;
     private final Asset asset;
@@ -39,16 +37,7 @@ public class DataGetFdForAssetSingle extends BaseSingle<DataApi.GetFdForAssetRes
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super DataApi.GetFdForAssetResult> subscriber) {
-        ResultCallback<DataApi.GetFdForAssetResult> resultCallback = new ResultCallback<DataApi.GetFdForAssetResult>() {
-            @Override
-            public void onResult(@NonNull DataApi.GetFdForAssetResult getFdForAssetResult) {
-                if (!getFdForAssetResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(getFdForAssetResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(getFdForAssetResult);
-                }
-            }
-        };
+        ResultCallback<DataApi.GetFdForAssetResult> resultCallback = SingleResultCallBack.get(subscriber);
 
         if(asset != null) {
             setupWearPendingResult(Wearable.DataApi.getFdForAsset(apiClient, asset), resultCallback);

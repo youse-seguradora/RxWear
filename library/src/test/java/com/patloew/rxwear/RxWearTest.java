@@ -61,6 +61,7 @@ import rx.Subscriber;
 import rx.observers.TestSubscriber;
 
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 /* Copyright 2016 Patrick Löwenstein
@@ -101,11 +102,13 @@ public class RxWearTest {
     @Mock MessageApi messageApi;
     @Mock NodeApi nodeApi;
 
-    @Mock RxWear rxWear;
+    RxWear rxWear;
 
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
+
+        rxWear = new RxWear(ctx);
 
         PowerMockito.mockStatic(Wearable.class);
         Whitebox.setInternalState(Wearable.class, capabilityApi);
@@ -114,7 +117,8 @@ public class RxWearTest {
         Whitebox.setInternalState(Wearable.class, messageApi);
         Whitebox.setInternalState(Wearable.class, nodeApi);
 
-        when(ctx.getApplicationContext()).thenReturn(ctx);
+        doReturn(status).when(status).getStatus();
+        doReturn(ctx).when(ctx).getApplicationContext();
     }
 
     //////////////////
@@ -129,21 +133,15 @@ public class RxWearTest {
 
     // Mock GoogleApiClient connection success behaviour
     private <T> void setupBaseObservableSuccess(final BaseObservable<T> baseObservable, final GoogleApiClient apiClient) {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                final Subscriber<? super T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+        doAnswer(invocation -> {
+            final Subscriber<? super T> subscriber = invocation.getArgumentAt(0, BaseObservable.ApiClientConnectionCallbacks.class).subscriber;
 
-                doAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        baseObservable.onGoogleApiClientReady(apiClient, subscriber);
-                        return null;
-                    }
-                }).when(apiClient).connect();
+            doAnswer(invocation1 -> {
+                baseObservable.onGoogleApiClientReady(apiClient, subscriber);
+                return null;
+            }).when(apiClient).connect();
 
-                return apiClient;
-            }
+            return apiClient;
         }).when(baseObservable).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
     }
 
@@ -154,73 +152,52 @@ public class RxWearTest {
 
     // Mock GoogleApiClient connection success behaviour
     private <T> void setupBaseSingleSuccess(final BaseSingle<T> baseSingle, final GoogleApiClient apiClient) {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                final SingleSubscriber<? super T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+        doAnswer(invocation -> {
+            final SingleSubscriber<? super T> subscriber = invocation.getArgumentAt(0, BaseSingle.ApiClientConnectionCallbacks.class).subscriber;
 
-                doAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        baseSingle.onGoogleApiClientReady(apiClient, subscriber);
-                        return null;
-                    }
-                }).when(apiClient).connect();
+            doAnswer(invocation1 -> {
+                baseSingle.onGoogleApiClientReady(apiClient, subscriber);
+                return null;
+            }).when(apiClient).connect();
 
-                return apiClient;
-            }
+            return apiClient;
         }).when(baseSingle).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
     }
 
     // Mock GoogleApiClient connection error behaviour
     private <T> void setupBaseObservableError(final BaseObservable<T> baseObservable) {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                final Subscriber<? super T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+        doAnswer(invocation -> {
+            final Subscriber<? super T> subscriber = invocation.getArgumentAt(0, BaseObservable.ApiClientConnectionCallbacks.class).subscriber;
 
-                doAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
-                        return null;
-                    }
-                }).when(apiClient).connect();
+            doAnswer(invocation1 -> {
+                subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
+                return null;
+            }).when(apiClient).connect();
 
-                return apiClient;
-            }
+            return apiClient;
         }).when(baseObservable).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
     }
 
     // Mock GoogleApiClient connection error behaviour
     private <T> void setupBaseSingleError(final BaseSingle<T> baseSingle) {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                final SingleSubscriber<? super T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+        doAnswer(invocation -> {
+            final SingleSubscriber<? super T> subscriber = invocation.getArgumentAt(0, BaseSingle.ApiClientConnectionCallbacks.class).subscriber;
 
-                doAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
-                        return null;
-                    }
-                }).when(apiClient).connect();
+            doAnswer(invocation1 -> {
+                subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
+                return null;
+            }).when(apiClient).connect();
 
-                return apiClient;
-            }
+            return apiClient;
         }).when(baseSingle).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
     }
 
     @SuppressWarnings("unchecked")
     private void setPendingResultValue(final Result result) {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((ResultCallback)invocation.getArguments()[0]).onResult(result);
-                return null;
-            }
-        }).when(pendingResult).setResultCallback(Matchers.<ResultCallback>any());
+        doAnswer(invocation -> {
+            invocation.getArgumentAt(0, ResultCallback.class).onResult(result);
+            return null;
+        }).when(pendingResult).setResultCallback(Matchers.any());
     }
 
     private static void assertError(TestSubscriber sub, Class<? extends Throwable> errorClass) {

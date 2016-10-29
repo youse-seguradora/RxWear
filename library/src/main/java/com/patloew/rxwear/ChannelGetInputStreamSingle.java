@@ -1,9 +1,6 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Channel;
 
 import java.io.InputStream;
@@ -24,7 +21,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelGetInputStreamSingle extends BaseSingle<InputStream> {
+class ChannelGetInputStreamSingle extends BaseSingle<InputStream> {
 
     private final Channel channel;
 
@@ -35,15 +32,9 @@ public class ChannelGetInputStreamSingle extends BaseSingle<InputStream> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super InputStream> subscriber) {
-        setupWearPendingResult(channel.getInputStream(apiClient), new ResultCallback<Channel.GetInputStreamResult>() {
-            @Override
-            public void onResult(@NonNull Channel.GetInputStreamResult getInputStreamResult) {
-                if (!getInputStreamResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(getInputStreamResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(getInputStreamResult.getInputStream());
-                }
-            }
-        });
+        setupWearPendingResult(
+                channel.getInputStream(apiClient),
+                SingleResultCallBack.get(subscriber, Channel.GetInputStreamResult::getInputStream)
+        );
     }
 }

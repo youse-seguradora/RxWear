@@ -1,11 +1,8 @@
 package com.patloew.rxwear;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.Wearable;
 
@@ -26,7 +23,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataGetItemSingle extends BaseSingle<DataItem> {
+class DataGetItemSingle extends BaseSingle<DataItem> {
 
     private final Uri uri;
 
@@ -37,15 +34,9 @@ public class DataGetItemSingle extends BaseSingle<DataItem> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super DataItem> subscriber) {
-        setupWearPendingResult(Wearable.DataApi.getDataItem(apiClient, uri), new ResultCallback<DataApi.DataItemResult>() {
-            @Override
-            public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
-                if (!dataItemResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(dataItemResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(dataItemResult.getDataItem().freeze());
-                }
-            }
-        });
+        setupWearPendingResult(
+                Wearable.DataApi.getDataItem(apiClient, uri),
+                SingleResultCallBack.get(subscriber, dataItemResult -> dataItemResult.getDataItem().freeze())
+        );
     }
 }

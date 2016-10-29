@@ -1,14 +1,11 @@
 package com.patloew.rxwear.transformers;
 
 import com.google.android.gms.wearable.MessageEvent;
+import com.patloew.rxwear.IOUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 import rx.Observable;
-import rx.exceptions.Exceptions;
-import rx.functions.Func1;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -56,30 +53,15 @@ public class MessageEventGetSerializable<T extends Serializable> implements Obse
     @Override
     public Observable<T> call(Observable<MessageEvent> observable) {
         if(path != null) {
-            observable = observable.filter(new Func1<MessageEvent, Boolean>() {
-                @Override
-                public Boolean call(MessageEvent messageEvent) {
-                    if (isPrefix) {
-                        return messageEvent.getPath().startsWith(path);
-                    } else {
-                        return messageEvent.getPath().equals(path);
-                    }
+            observable = observable.filter(messageEvent -> {
+                if (isPrefix) {
+                    return messageEvent.getPath().startsWith(path);
+                } else {
+                    return messageEvent.getPath().equals(path);
                 }
             });
         }
 
-        return observable.map(new Func1<MessageEvent, T>() {
-            @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-            @Override
-            public T call(MessageEvent messageEvent) {
-                try {
-                    ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(messageEvent.getData()));
-                    return (T) objectInputStream.readObject();
-                } catch(Exception e) {
-                    Exceptions.propagate(e);
-                    return null;
-                }
-            }
-        });
+        return observable.map(messageEvent -> IOUtil.<T>readObjectFromByteArray(messageEvent.getData()));
     }
 }

@@ -1,7 +1,5 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -27,7 +25,7 @@ import rx.Subscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class NodeListenerObservable extends BaseObservable<NodeEvent> {
+class NodeListenerObservable extends BaseObservable<NodeEvent> {
 
 
     private NodeApi.NodeListener listener;
@@ -50,14 +48,7 @@ public class NodeListenerObservable extends BaseObservable<NodeEvent> {
             }
         };
 
-        ResultCallback<Status> resultCallback = new ResultCallback<Status>() {
-            @Override
-            public void onResult(@NonNull Status status) {
-                if (!status.isSuccess()) {
-                    subscriber.onError(new StatusException(status));
-                }
-            }
-        };
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
 
         setupWearPendingResult(Wearable.NodeApi.addListener(apiClient, listener), resultCallback);
     }

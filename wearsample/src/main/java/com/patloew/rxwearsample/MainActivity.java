@@ -9,6 +9,8 @@ import android.widget.Toast;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.MessageApi;
+import com.patloew.rxwear.Data;
+import com.patloew.rxwear.Message;
 import com.patloew.rxwear.RxWear;
 import com.patloew.rxwear.transformers.DataEventGetDataMap;
 import com.patloew.rxwear.transformers.DataItemGetDataMap;
@@ -26,6 +28,8 @@ public class MainActivity extends WearableActivity {
 
     private CompositeSubscription subscription = new CompositeSubscription();
 
+    private RxWear rxWear;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,9 +41,9 @@ public class MainActivity extends WearableActivity {
         mMessageText = (TextView) findViewById(R.id.message);
         mPersistentText = (TextView) findViewById(R.id.persistent);
 
-        RxWear.init(this);
+        rxWear = new RxWear(this);
 
-        subscription.add(RxWear.Message.listen("/message", MessageApi.FILTER_LITERAL)
+        subscription.add(rxWear.message().listen("/message", MessageApi.FILTER_LITERAL)
                 .compose(MessageEventGetDataMap.noFilter())
                 .subscribe(dataMap -> {
                     mTitleText.setText(dataMap.getString("title", getString(R.string.no_message)));
@@ -48,8 +52,8 @@ public class MainActivity extends WearableActivity {
 
         subscription.add(
                 Observable.concat(
-                        RxWear.Data.get("/persistentText").compose(DataItemGetDataMap.noFilter()),
-                        RxWear.Data.listen("/persistentText", DataApi.FILTER_LITERAL).compose(DataEventGetDataMap.filterByType(DataEvent.TYPE_CHANGED))
+                        rxWear.data().get("/persistentText").compose(DataItemGetDataMap.noFilter()),
+                        rxWear.data().listen("/persistentText", DataApi.FILTER_LITERAL).compose(DataEventGetDataMap.filterByType(DataEvent.TYPE_CHANGED))
                 ).map(dataMap -> dataMap.getString("text"))
                 .subscribe(text -> mPersistentText.setText(text),
                         throwable -> Toast.makeText(this, "Error on data listen", Toast.LENGTH_LONG))

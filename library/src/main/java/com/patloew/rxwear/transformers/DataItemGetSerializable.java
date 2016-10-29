@@ -1,14 +1,11 @@
 package com.patloew.rxwear.transformers;
 
 import com.google.android.gms.wearable.DataItem;
+import com.patloew.rxwear.IOUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 import rx.Observable;
-import rx.exceptions.Exceptions;
-import rx.functions.Func1;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -55,30 +52,15 @@ public class DataItemGetSerializable<T extends Serializable> implements Observab
     @Override
     public Observable<T> call(Observable<DataItem> observable) {
         if(path != null) {
-            observable = observable.filter(new Func1<DataItem, Boolean>() {
-                @Override
-                public Boolean call(DataItem dataItem) {
-                    if (isPrefix) {
-                        return dataItem.getUri().getPath().startsWith(path);
-                    } else {
-                        return dataItem.getUri().getPath().equals(path);
-                    }
+            observable = observable.filter(dataItem -> {
+                if (isPrefix) {
+                    return dataItem.getUri().getPath().startsWith(path);
+                } else {
+                    return dataItem.getUri().getPath().equals(path);
                 }
             });
         }
 
-        return observable.map(new Func1<DataItem, T>() {
-            @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-            @Override
-            public T call(DataItem dataItem) {
-                try {
-                    ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(dataItem.getData()));
-                    return (T) objectInputStream.readObject();
-                } catch(Exception e) {
-                    Exceptions.propagate(e);
-                    return null;
-                }
-            }
-        });
+        return observable.map(dataItem -> IOUtil.<T>readObjectFromByteArray(dataItem.getData()));
     }
 }

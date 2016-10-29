@@ -16,10 +16,11 @@ import com.google.android.gms.common.api.Status;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public class StatusException extends Throwable {
+public class StatusException extends Exception {
     private final Status status;
 
     public StatusException(Status status) {
+        super(status.toString());
         this.status = status;
     }
 

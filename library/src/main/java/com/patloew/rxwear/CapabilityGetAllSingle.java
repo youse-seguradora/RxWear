@@ -1,9 +1,6 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.CapabilityApi;
 import com.google.android.gms.wearable.CapabilityInfo;
 import com.google.android.gms.wearable.Wearable;
@@ -26,7 +23,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class CapabilityGetAllSingle extends BaseSingle<Map<String, CapabilityInfo>> {
+class CapabilityGetAllSingle extends BaseSingle<Map<String, CapabilityInfo>> {
 
     private final int nodeFilter;
 
@@ -37,15 +34,9 @@ public class CapabilityGetAllSingle extends BaseSingle<Map<String, CapabilityInf
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Map<String, CapabilityInfo>> subscriber) {
-        setupWearPendingResult(Wearable.CapabilityApi.getAllCapabilities(apiClient, nodeFilter), new ResultCallback<CapabilityApi.GetAllCapabilitiesResult>() {
-            @Override
-            public void onResult(@NonNull CapabilityApi.GetAllCapabilitiesResult getAllCapabilitiesResult) {
-                if (!getAllCapabilitiesResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(getAllCapabilitiesResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(getAllCapabilitiesResult.getAllCapabilities());
-                }
-            }
-        });
+        setupWearPendingResult(
+                Wearable.CapabilityApi.getAllCapabilities(apiClient, nodeFilter),
+                SingleResultCallBack.get(subscriber, CapabilityApi.GetAllCapabilitiesResult::getAllCapabilities)
+        );
     }
 }

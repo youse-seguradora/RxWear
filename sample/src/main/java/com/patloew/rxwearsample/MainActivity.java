@@ -12,11 +12,16 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.jakewharton.rxbinding.view.RxView;
+import com.patloew.rxwear.Data;
 import com.patloew.rxwear.GoogleAPIConnectionException;
+import com.patloew.rxwear.Message;
 import com.patloew.rxwear.RxWear;
 import com.patloew.rxwear.transformers.DataItemGetDataMap;
 
+import rx.Emitter;
 import rx.Observable;
+import rx.Single;
+import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
 
 public class MainActivity extends AppCompatActivity {
@@ -31,13 +36,14 @@ public class MainActivity extends AppCompatActivity {
     private CompositeSubscription subscription = new CompositeSubscription();
     private Observable<Boolean> validator;
 
+    private RxWear rxWear;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        RxWear.init(this);
+        rxWear = new RxWear(this);
 
         coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
         titleEditText = (EditText) findViewById(R.id.et_title);
@@ -50,8 +56,7 @@ public class MainActivity extends AppCompatActivity {
                 .doOnNext(click -> hideKeyboard())
                 .flatMap(click2 -> validate())
                 .filter(isValid -> isValid)
-                .flatMap(valid ->
-                        RxWear.Message.SendDataMap.toAllRemoteNodes("/message")
+                .flatMap(valid -> rxWear.message().sendDataMapToAllRemoteNodes("/message")
                             .putString("title", titleEditText.getText().toString())
                             .putString("message", messageEditText.getText().toString())
                             .toObservable()
@@ -69,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
         subscription.add(RxView.clicks(setPersistentButton)
                 .doOnNext(click -> hideKeyboard())
-                .flatMap(click2 -> RxWear.Data.PutDataMap.to("/persistentText").setUrgent().putString("text", persistentEditText.getText().toString()).toObservable())
+                .flatMap(click2 -> rxWear.data().putDataMap().urgent().to("/persistentText").putString("text", persistentEditText.getText().toString()).toObservable())
                 .subscribe(dataItem1 -> Snackbar.make(coordinatorLayout, "Set persistent text", Snackbar.LENGTH_LONG).show(),
                         throwable -> {
                             Log.e("MainActivity", "Error on setting persistent text", throwable);
@@ -81,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }));
 
-        subscription.add(RxWear.Data.get("/persistentText")
+        subscription.add(rxWear.data().get("/persistentText")
                 .compose(DataItemGetDataMap.noFilter())
                 .map(dataMap -> dataMap.getString("text"))
                 .subscribe(text -> persistentEditText.setText(text)));
@@ -103,21 +108,20 @@ public class MainActivity extends AppCompatActivity {
 
     private Observable<Boolean> validate() {
         if(validator == null) {
-            validator = Observable.create((Observable.OnSubscribe<Boolean>) subscriber -> {
+            validator = Observable.fromCallable(() -> {
                 boolean valid = true;
 
-                if(TextUtils.isEmpty(titleEditText.getText())) {
+                if (TextUtils.isEmpty(titleEditText.getText())) {
                     titleEditText.setError("Please enter title");
                     valid = false;
                 }
 
-                if(TextUtils.isEmpty(messageEditText.getText())) {
+                if (TextUtils.isEmpty(messageEditText.getText())) {
                     messageEditText.setError("Please enter message");
                     valid = false;
                 }
 
-                subscriber.onNext(valid);
-                subscriber.onCompleted();
+                return valid;
             });
         }
 

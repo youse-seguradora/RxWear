@@ -5,7 +5,6 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 
 import rx.Observable;
-import rx.functions.Func1;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -51,23 +50,15 @@ public class DataItemGetDataMap implements Observable.Transformer<DataItem, Data
     @Override
     public Observable<DataMap> call(Observable<DataItem> observable) {
         if(path != null) {
-            observable = observable.filter(new Func1<DataItem, Boolean>() {
-                @Override
-                public Boolean call(DataItem dataItem) {
-                    if (isPrefix) {
-                        return dataItem.getUri().getPath().startsWith(path);
-                    } else {
-                        return dataItem.getUri().getPath().equals(path);
-                    }
+            observable = observable.filter(dataItem -> {
+                if (isPrefix) {
+                    return dataItem.getUri().getPath().startsWith(path);
+                } else {
+                    return dataItem.getUri().getPath().equals(path);
                 }
             });
         }
 
-        return observable.map(new Func1<DataItem, DataMap>() {
-            @Override
-            public DataMap call(DataItem dataItem) {
-                return DataMapItem.fromDataItem(dataItem).getDataMap();
-            }
-        });
+        return observable.map(dataItem -> DataMapItem.fromDataItem(dataItem).getDataMap());
     }
 }

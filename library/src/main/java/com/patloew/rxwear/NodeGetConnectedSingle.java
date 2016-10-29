@@ -1,9 +1,6 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
@@ -26,7 +23,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class NodeGetConnectedSingle extends BaseSingle<List<Node>> {
+class NodeGetConnectedSingle extends BaseSingle<List<Node>> {
 
     NodeGetConnectedSingle(RxWear rxWear, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
@@ -34,16 +31,9 @@ public class NodeGetConnectedSingle extends BaseSingle<List<Node>> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super List<Node>> subscriber) {
-        setupWearPendingResult(Wearable.NodeApi.getConnectedNodes(apiClient), new ResultCallback<NodeApi.GetConnectedNodesResult>() {
-            @Override
-            public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
-                if (!getConnectedNodesResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(getConnectedNodesResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(getConnectedNodesResult.getNodes());
-                }
-            }
-        });
-
+        setupWearPendingResult(
+                Wearable.NodeApi.getConnectedNodes(apiClient),
+                SingleResultCallBack.get(subscriber, NodeApi.GetConnectedNodesResult::getNodes)
+        );
     }
 }

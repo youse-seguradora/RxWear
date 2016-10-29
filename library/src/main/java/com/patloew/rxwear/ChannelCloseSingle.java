@@ -1,6 +1,7 @@
 package com.patloew.rxwear;
 
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.Channel;
 
@@ -21,7 +22,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelCloseSingle extends BaseSingle<Status> {
+class ChannelCloseSingle extends BaseSingle<Status> {
 
     private final Channel channel;
     private final Integer errorCode;
@@ -34,7 +35,7 @@ public class ChannelCloseSingle extends BaseSingle<Status> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
-        StatusResultCallBack resultCallBack = new StatusResultCallBack(subscriber);
+        ResultCallback<Status> resultCallBack = SingleResultCallBack.get(subscriber);
 
         if(errorCode != null) {
             setupWearPendingResult(channel.close(apiClient, errorCode), resultCallBack);

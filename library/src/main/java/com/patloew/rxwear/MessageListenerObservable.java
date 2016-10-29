@@ -1,7 +1,6 @@
 package com.patloew.rxwear;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -27,7 +26,7 @@ import rx.Subscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class MessageListenerObservable extends BaseObservable<MessageEvent> {
+class MessageListenerObservable extends BaseObservable<MessageEvent> {
 
     private final Uri uri;
     private final Integer filterType;
@@ -42,21 +41,9 @@ public class MessageListenerObservable extends BaseObservable<MessageEvent> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super MessageEvent> subscriber) {
-        listener = new MessageApi.MessageListener() {
-            @Override
-            public void onMessageReceived(MessageEvent messageEvent) {
-                subscriber.onNext(messageEvent);
-            }
-        };
+        listener = subscriber::onNext;
 
-        ResultCallback<Status> resultCallback = new ResultCallback<Status>() {
-            @Override
-            public void onResult(@NonNull Status status) {
-                if (!status.isSuccess()) {
-                    subscriber.onError(new StatusException(status));
-                }
-            }
-        };
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
 
         if(uri != null) {
             setupWearPendingResult(Wearable.MessageApi.addListener(apiClient, listener, uri, filterType), resultCallback);

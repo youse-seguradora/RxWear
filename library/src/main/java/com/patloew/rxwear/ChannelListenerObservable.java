@@ -1,7 +1,5 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -31,7 +29,7 @@ import rx.Subscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelListenerObservable extends BaseObservable<ChannelEvent> {
+class ChannelListenerObservable extends BaseObservable<ChannelEvent> {
 
     private final Channel channel;
     private ChannelApi.ChannelListener listener;
@@ -44,36 +42,24 @@ public class ChannelListenerObservable extends BaseObservable<ChannelEvent> {
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super ChannelEvent> subscriber) {
         listener = new ChannelApi.ChannelListener() {
-
-            @Override
-            public void onChannelOpened(Channel channel) {
+            @Override public void onChannelOpened(Channel channel) {
                 subscriber.onNext(new ChannelOpenedEvent(channel));
             }
 
-            @Override
-            public void onChannelClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
+            @Override public void onChannelClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
                 subscriber.onNext(new ChannelClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
 
-            @Override
-            public void onInputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
+            @Override public void onInputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
                 subscriber.onNext(new InputClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
 
-            @Override
-            public void onOutputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
+            @Override public void onOutputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
                 subscriber.onNext(new OutputClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
         };
 
-        ResultCallback<Status> resultCallback = new ResultCallback<Status>() {
-            @Override
-            public void onResult(@NonNull Status status) {
-                if (!status.isSuccess()) {
-                    subscriber.onError(new StatusException(status));
-                }
-            }
-        };
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
 
         if(channel != null) {
             setupWearPendingResult(channel.addListener(apiClient, listener), resultCallback);

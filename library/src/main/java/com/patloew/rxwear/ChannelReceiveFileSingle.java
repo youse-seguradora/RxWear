@@ -23,7 +23,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelReceiveFileSingle extends BaseSingle<Status> {
+class ChannelReceiveFileSingle extends BaseSingle<Status> {
 
     private final Channel channel;
     private final Uri uri;
@@ -38,6 +38,9 @@ public class ChannelReceiveFileSingle extends BaseSingle<Status> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
-        setupWearPendingResult(channel.receiveFile(apiClient, uri, append), new StatusResultCallBack(subscriber));
+        setupWearPendingResult(
+                channel.receiveFile(apiClient, uri, append),
+                SingleResultCallBack.get(subscriber)
+        );
     }
 }

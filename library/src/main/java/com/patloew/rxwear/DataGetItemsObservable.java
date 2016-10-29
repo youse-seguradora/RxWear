@@ -1,7 +1,6 @@
 package com.patloew.rxwear;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -26,7 +25,7 @@ import rx.Subscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataGetItemsObservable extends BaseObservable<DataItem> {
+class DataGetItemsObservable extends BaseObservable<DataItem> {
 
     private final Uri uri;
     private final Integer filterType;
@@ -39,25 +38,22 @@ public class DataGetItemsObservable extends BaseObservable<DataItem> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super DataItem> subscriber) {
-        ResultCallback<DataItemBuffer> resultCallback = new ResultCallback<DataItemBuffer>() {
-            @Override
-            public void onResult(@NonNull DataItemBuffer dataItemBuffer) {
-                try {
-                    if(!dataItemBuffer.getStatus().isSuccess()) {
-                        subscriber.onError(new StatusException(dataItemBuffer.getStatus()));
-                    } else {
-                        for (int i = 0; i < dataItemBuffer.getCount(); i++) {
-                            if(subscriber.isUnsubscribed()) { break; }
-                            subscriber.onNext(dataItemBuffer.get(i).freeze());
-                        }
-
-                        subscriber.onCompleted();
+        ResultCallback<DataItemBuffer> resultCallback = dataItemBuffer -> {
+            try {
+                if(!dataItemBuffer.getStatus().isSuccess()) {
+                    subscriber.onError(new StatusException(dataItemBuffer.getStatus()));
+                } else {
+                    for (int i = 0; i < dataItemBuffer.getCount(); i++) {
+                        if(subscriber.isUnsubscribed()) { break; }
+                        subscriber.onNext(dataItemBuffer.get(i).freeze());
                     }
-                } catch(Throwable throwable) {
-                    subscriber.onError(throwable);
-                } finally {
-                    dataItemBuffer.release();
+
+                    subscriber.onCompleted();
                 }
+            } catch(Throwable throwable) {
+                subscriber.onError(throwable);
+            } finally {
+                dataItemBuffer.release();
             }
         };
 

@@ -1,9 +1,6 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.CapabilityApi;
 import com.google.android.gms.wearable.Wearable;
@@ -25,7 +22,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class CapabilityAddLocalSingle extends BaseSingle<Status> {
+class CapabilityAddLocalSingle extends BaseSingle<Status> {
 
     private final String capability;
 
@@ -36,15 +33,9 @@ public class CapabilityAddLocalSingle extends BaseSingle<Status> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
-        setupWearPendingResult(Wearable.CapabilityApi.addLocalCapability(apiClient, capability), new ResultCallback<CapabilityApi.AddLocalCapabilityResult>() {
-            @Override
-            public void onResult(@NonNull CapabilityApi.AddLocalCapabilityResult addLocalCapabilityResult) {
-                if (!addLocalCapabilityResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(addLocalCapabilityResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(addLocalCapabilityResult.getStatus());
-                }
-            }
-        });
+        setupWearPendingResult(
+                Wearable.CapabilityApi.addLocalCapability(apiClient, capability),
+                SingleResultCallBack.get(subscriber, CapabilityApi.AddLocalCapabilityResult::getStatus)
+        );
     }
 }

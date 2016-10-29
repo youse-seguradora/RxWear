@@ -1,11 +1,7 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.Channel;
-import com.google.android.gms.wearable.ChannelApi;
 import com.google.android.gms.wearable.Wearable;
 
 import java.io.IOException;
@@ -26,7 +22,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class ChannelOpenSingle extends BaseSingle<Channel> {
+class ChannelOpenSingle extends BaseSingle<Channel> {
 
     private final String nodeId;
     private final String path;
@@ -39,19 +35,19 @@ public class ChannelOpenSingle extends BaseSingle<Channel> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Channel> subscriber) {
-        setupWearPendingResult(Wearable.ChannelApi.openChannel(apiClient, nodeId, path), new ResultCallback<ChannelApi.OpenChannelResult>() {
-            @Override
-            public void onResult(@NonNull ChannelApi.OpenChannelResult openChannelResult) {
-                if (!openChannelResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(openChannelResult.getStatus()));
-                } else {
-                    if(openChannelResult.getChannel() != null) {
-                        subscriber.onSuccess(openChannelResult.getChannel());
+        setupWearPendingResult(
+                Wearable.ChannelApi.openChannel(apiClient, nodeId, path),
+                openChannelResult -> {
+                    if (!openChannelResult.getStatus().isSuccess()) {
+                        subscriber.onError(new StatusException(openChannelResult.getStatus()));
                     } else {
-                        subscriber.onError(new IOException("Channel connection could not be opened"));
+                        if(openChannelResult.getChannel() != null) {
+                            subscriber.onSuccess(openChannelResult.getChannel());
+                        } else {
+                            subscriber.onError(new IOException("Channel connection could not be opened"));
+                        }
                     }
                 }
-            }
-        });
+        );
     }
 }

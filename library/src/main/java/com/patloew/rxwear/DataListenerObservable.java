@@ -1,14 +1,12 @@
 package com.patloew.rxwear;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
-import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
@@ -28,7 +26,7 @@ import rx.Subscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataListenerObservable extends BaseObservable<DataEvent> {
+class DataListenerObservable extends BaseObservable<DataEvent> {
 
     private final Uri uri;
     private final Integer filterType;
@@ -43,23 +41,13 @@ public class DataListenerObservable extends BaseObservable<DataEvent> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super DataEvent> subscriber) {
-        listener = new DataApi.DataListener() {
-            @Override
-            public void onDataChanged(DataEventBuffer dataEventBuffer) {
-                for(int i=0; i<dataEventBuffer.getCount(); i++) {
-                    subscriber.onNext(dataEventBuffer.get(i).freeze());
-                }
+        listener = dataEventBuffer -> {
+            for(int i=0; i<dataEventBuffer.getCount(); i++) {
+                subscriber.onNext(dataEventBuffer.get(i).freeze());
             }
         };
 
-        ResultCallback<Status> resultCallback = new ResultCallback<Status>() {
-            @Override
-            public void onResult(@NonNull Status status) {
-                if (!status.isSuccess()) {
-                    subscriber.onError(new StatusException(status));
-                }
-            }
-        };
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
 
         if(uri != null && filterType != null) {
             setupWearPendingResult(Wearable.DataApi.addListener(apiClient, listener, uri, filterType), resultCallback);

@@ -5,7 +5,6 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 
 import rx.Observable;
-import rx.functions.Func1;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -65,32 +64,23 @@ public class DataEventGetDataMap implements Observable.Transformer<DataEvent, Da
     @Override
     public Observable<DataMap> call(Observable<DataEvent> observable) {
         if(type != null) {
-            observable = observable.filter(new Func1<DataEvent, Boolean>() {
-                @Override
-                public Boolean call(DataEvent dataEvent) {
-                    return dataEvent.getType() == type;
-                }
-            });
+            observable = observable.filter(dataEvent -> dataEvent.getType() == type);
         }
 
         if(path != null) {
-            observable = observable.filter(new Func1<DataEvent, Boolean>() {
-                @Override
-                public Boolean call(DataEvent dataEvent) {
-                    if (isPrefix) {
-                        return dataEvent.getDataItem().getUri().getPath().startsWith(path);
-                    } else {
-                        return dataEvent.getDataItem().getUri().getPath().equals(path);
-                    }
+            observable = observable.filter(dataEvent -> {
+                if (isPrefix) {
+                    return dataEvent.getDataItem().getUri().getPath().startsWith(path);
+                } else {
+                    return dataEvent.getDataItem().getUri().getPath().equals(path);
                 }
             });
         }
 
-        return observable.map(new Func1<DataEvent, DataMap>() {
-            @Override
-            public DataMap call(DataEvent dataEvent) {
-                return DataMapItem.fromDataItem(dataEvent.getDataItem()).getDataMap();
-            }
-        });
+        return observable.map(this::getDataMap);
+    }
+
+    private DataMap getDataMap(DataEvent dataEvent) {
+        return DataMapItem.fromDataItem(dataEvent.getDataItem()).getDataMap();
     }
 }

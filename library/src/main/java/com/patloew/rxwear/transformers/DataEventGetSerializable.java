@@ -1,14 +1,12 @@
 package com.patloew.rxwear.transformers;
 
 import com.google.android.gms.wearable.DataEvent;
+import com.patloew.rxwear.IOUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 import rx.Observable;
-import rx.exceptions.Exceptions;
-import rx.functions.Func1;
+
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -71,39 +69,19 @@ public class DataEventGetSerializable<T extends Serializable> implements Observa
     @Override
     public Observable<T> call(Observable<DataEvent> observable) {
         if(type != null) {
-            observable = observable.filter(new Func1<DataEvent, Boolean>() {
-                @Override
-                public Boolean call(DataEvent dataEvent) {
-                    return dataEvent.getType() == type;
-                }
-            });
+            observable = observable.filter(dataEvent -> dataEvent.getType() == type);
         }
 
         if(path != null) {
-            observable = observable.filter(new Func1<DataEvent, Boolean>() {
-                @Override
-                public Boolean call(DataEvent dataEvent) {
-                    if (isPrefix) {
-                        return dataEvent.getDataItem().getUri().getPath().startsWith(path);
-                    } else {
-                        return dataEvent.getDataItem().getUri().getPath().equals(path);
-                    }
+            observable = observable.filter(dataEvent -> {
+                if (isPrefix) {
+                    return dataEvent.getDataItem().getUri().getPath().startsWith(path);
+                } else {
+                    return dataEvent.getDataItem().getUri().getPath().equals(path);
                 }
             });
         }
 
-        return observable.map(new Func1<DataEvent, T>() {
-            @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-            @Override
-            public T call(DataEvent dataEvent) {
-                try {
-                    ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(dataEvent.getDataItem().getData()));
-                    return (T) objectInputStream.readObject();
-                } catch(Exception e) {
-                    Exceptions.propagate(e);
-                    return null;
-                }
-            }
-        });
+        return observable.map(dataEvent -> IOUtil.<T>readObjectFromByteArray(dataEvent.getDataItem().getData()));
     }
 }

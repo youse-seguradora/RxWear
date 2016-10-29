@@ -1,7 +1,6 @@
 package com.patloew.rxwear;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -25,7 +24,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class DataDeleteItemsSingle extends BaseSingle<Integer> {
+class DataDeleteItemsSingle extends BaseSingle<Integer> {
 
     private final Uri uri;
     private final Integer filterType;
@@ -38,16 +37,7 @@ public class DataDeleteItemsSingle extends BaseSingle<Integer> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Integer> subscriber) {
-        ResultCallback<DataApi.DeleteDataItemsResult> resultResultCallback = new ResultCallback<DataApi.DeleteDataItemsResult>() {
-            @Override
-            public void onResult(@NonNull DataApi.DeleteDataItemsResult deleteDataItemsResult) {
-                if (!deleteDataItemsResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(deleteDataItemsResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(deleteDataItemsResult.getNumDeleted());
-                }
-            }
-        };
+        ResultCallback<DataApi.DeleteDataItemsResult> resultResultCallback = SingleResultCallBack.get(subscriber, DataApi.DeleteDataItemsResult::getNumDeleted);
 
         if(filterType == null) {
             setupWearPendingResult(Wearable.DataApi.deleteDataItems(apiClient, uri), resultResultCallback);

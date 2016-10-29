@@ -1,9 +1,6 @@
 package com.patloew.rxwear;
 
-import android.support.annotation.NonNull;
-
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Wearable;
 
@@ -24,7 +21,7 @@ import rx.SingleSubscriber;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License. */
-public class MessageSendSingle extends BaseSingle<Integer> {
+class MessageSendSingle extends BaseSingle<Integer> {
 
     private final String nodeId;
     private final String path;
@@ -39,15 +36,9 @@ public class MessageSendSingle extends BaseSingle<Integer> {
 
     @Override
     protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Integer> subscriber) {
-        setupWearPendingResult(Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data), new ResultCallback<MessageApi.SendMessageResult>() {
-            @Override
-            public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
-                if (!sendMessageResult.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(sendMessageResult.getStatus()));
-                } else {
-                    subscriber.onSuccess(sendMessageResult.getRequestId());
-                }
-            }
-        });
+        setupWearPendingResult(
+                Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data),
+                SingleResultCallBack.get(subscriber, MessageApi.SendMessageResult::getRequestId)
+        );
     }
 }
