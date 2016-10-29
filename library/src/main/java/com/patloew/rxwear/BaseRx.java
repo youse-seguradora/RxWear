@@ -36,8 +36,8 @@ abstract class BaseRx<T> {
     private final Context ctx;
     private final Api<? extends Api.ApiOptions.NotRequiredOptions>[] services;
     private final Scope[] scopes;
-    private final Long timeoutTime;
-    private final TimeUnit timeoutUnit;
+    final Long timeoutTime;
+    final TimeUnit timeoutUnit;
 
     protected BaseRx(@NonNull RxWear rxWear, Long timeout, TimeUnit timeUnit) {
         this.ctx = rxWear.ctx;
@@ -69,10 +69,13 @@ abstract class BaseRx<T> {
         }
     }
 
-    protected final GoogleApiClient createApiClient(ApiClientConnectionCallbacks apiClientConnectionCallbacks) {
+    protected GoogleApiClient.Builder getApiClientBuilder() {
+        return new GoogleApiClient.Builder(ctx);
+    }
 
-        GoogleApiClient.Builder apiClientBuilder = new GoogleApiClient.Builder(ctx);
+    protected GoogleApiClient createApiClient(ApiClientConnectionCallbacks apiClientConnectionCallbacks) {
 
+        GoogleApiClient.Builder apiClientBuilder = getApiClientBuilder();
 
         for (Api<? extends Api.ApiOptions.NotRequiredOptions> service : services) {
             apiClientBuilder.addApi(service);
