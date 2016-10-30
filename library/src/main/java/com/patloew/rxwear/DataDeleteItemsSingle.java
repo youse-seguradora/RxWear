@@ -26,8 +26,8 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class DataDeleteItemsSingle extends BaseSingle<Integer> {
 
-    private final Uri uri;
-    private final Integer filterType;
+    final Uri uri;
+    final Integer filterType;
 
     DataDeleteItemsSingle(RxWear rxWear, Uri uri, Integer filterType, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

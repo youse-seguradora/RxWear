@@ -1,9 +1,12 @@
 package com.patloew.rxwear;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import rx.exceptions.Exceptions;
 
@@ -36,6 +39,20 @@ public class IOUtil {
 
         } finally {
             closeSilently(ois);
+        }
+    }
+
+    public static byte[] writeObjectToByteArray(Serializable serializable) throws IOException {
+        ObjectOutputStream oos = null;
+
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            oos = new ObjectOutputStream(out);
+            oos.writeObject(serializable);
+            oos.flush();
+            return out.toByteArray();
+        } finally {
+            IOUtil.closeSilently(oos);
         }
     }
 

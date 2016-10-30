@@ -13,17 +13,13 @@ import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Single;
-
-import static com.patloew.rxwear.IOUtil.closeSilently;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -46,6 +42,11 @@ public class Data {
         this.rxWear = rxWear;
     }
 
+
+    Uri.Builder getUriBuilder() {
+        return new Uri.Builder();
+    }
+
     // listen
 
     public Observable<DataEvent> listen() {
@@ -65,11 +66,11 @@ public class Data {
     }
 
     public Observable<DataEvent> listen(@NonNull String path, int filterType) {
-        return listenInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, null, null);
+        return listenInternal(getUriBuilder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, null, null);
     }
 
     public Observable<DataEvent> listen(@NonNull String path, int filterType, long timeout, @NonNull TimeUnit timeUnit) {
-        return listenInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, timeout, timeUnit);
+        return listenInternal(getUriBuilder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, timeout, timeUnit);
     }
 
     private Observable<DataEvent> listenInternal(Uri uri, Integer filterType, Long timeout, TimeUnit timeUnit) {
@@ -116,27 +117,8 @@ public class Data {
         return putInternal(putDataMapRequest.asPutDataRequest(), timeout, timeUnit);
     }
 
-    private Single<DataItem> putInternal(PutDataRequest putDataRequest, Long timeout, TimeUnit timeUnit) {
+    Single<DataItem> putInternal(PutDataRequest putDataRequest, Long timeout, TimeUnit timeUnit) {
         return Single.create(new DataPutItemSingle(rxWear, putDataRequest, timeout, timeUnit));
-    }
-
-
-    // getSingle
-
-    @Deprecated
-    // use get() instead
-    public Single<DataItem> getSingle(@NonNull Uri uri) {
-        return getSingleInternal(uri, null, null);
-    }
-
-    @Deprecated
-    // use get() instead
-    public Single<DataItem> getSingle(@NonNull Uri uri, long timeout, @NonNull TimeUnit timeUnit) {
-        return getSingleInternal(uri, timeout, timeUnit);
-    }
-
-    private Single<DataItem> getSingleInternal(Uri uri, Long timeout, TimeUnit timeUnit) {
-        return Single.create(new DataGetItemSingle(rxWear, uri, timeout, timeUnit));
     }
 
     // get
@@ -150,11 +132,11 @@ public class Data {
     }
 
     public Observable<DataItem> get(@NonNull String path, int filterType) {
-        return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, null, null);
+        return getInternal(getUriBuilder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, null, null);
     }
 
     public Observable<DataItem> get(@NonNull String path, int filterType, long timeout, @NonNull TimeUnit timeUnit) {
-        return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, timeout, timeUnit);
+        return getInternal(getUriBuilder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), filterType, timeout, timeUnit);
     }
 
     public Observable<DataItem> get(@NonNull Uri uri) {
@@ -166,11 +148,11 @@ public class Data {
     }
 
     public Observable<DataItem> get(@NonNull String path) {
-        return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), null, null, null);
+        return getInternal(getUriBuilder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), null, null, null);
     }
 
     public Observable<DataItem> get(@NonNull String path, long timeout, @NonNull TimeUnit timeUnit) {
-        return getInternal(new Uri.Builder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), null, timeout, timeUnit);
+        return getInternal(getUriBuilder().scheme(PutDataRequest.WEAR_URI_SCHEME).path(path).build(), null, timeout, timeUnit);
     }
 
     public Observable<DataItem> get() {
@@ -229,8 +211,8 @@ public class Data {
      */
     public class PutSerializable {
 
-        private final Serializable serializable;
-        private boolean urgent = false;
+        final Serializable serializable;
+        boolean urgent = false;
 
         PutSerializable(Serializable serializable) {
             this.serializable = serializable;
@@ -260,21 +242,11 @@ public class Data {
         }
 
         private Single<DataItem> createPutSerializableSingle(PutDataRequest request) {
-            ObjectOutputStream oos = null;
-
             try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                oos = new ObjectOutputStream(baos);
-                oos.writeObject(serializable);
-                oos.flush();
-                request.setData(baos.toByteArray());
+                request.setData(IOUtil.writeObjectToByteArray(serializable));
                 return putInternal(request, null, null);
-
             } catch(IOException e) {
                 return Single.error(e);
-
-            } finally {
-                closeSilently(oos);
             }
         }
     }
@@ -295,7 +267,7 @@ public class Data {
 
         PutDataMap() { }
 
-        private boolean urgent = false;
+        boolean urgent = false;
 
         public PutDataMap urgent() {
             urgent = true;
@@ -307,7 +279,7 @@ public class Data {
         }
 
         public RxFitPutDataMapRequest withAutoAppendedId(String pathPrefix) {
-            return new RxFitPutDataMapRequest( null, null, pathPrefix, urgent);
+            return new RxFitPutDataMapRequest(null, null, pathPrefix, urgent);
         }
 
         public RxFitPutDataMapRequest to(String path) {
@@ -317,7 +289,7 @@ public class Data {
 
 
     public class RxFitPutDataMapRequest {
-        private final PutDataMapRequest request;
+        final PutDataMapRequest request;
 
         private RxFitPutDataMapRequest(String path, DataMapItem dataMapItem, String pathPrefix, boolean urgent) {
             if(path != null) {

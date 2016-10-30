@@ -23,9 +23,9 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class MessageSendSingle extends BaseSingle<Integer> {
 
-    private final String nodeId;
-    private final String path;
-    private final byte[] data;
+    final String nodeId;
+    final String path;
+    final byte[] data;
 
     MessageSendSingle(RxWear rxWear, String nodeId, String path, byte[] data, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

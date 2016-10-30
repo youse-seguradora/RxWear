@@ -28,9 +28,9 @@ import rx.Subscriber;
  * limitations under the License. */
 class CapabilityListenerObservable extends BaseObservable<CapabilityInfo> {
 
-    private final String capability;
-    private final Uri uri;
-    private final Integer filterType;
+    final String capability;
+    final Uri uri;
+    final Integer filterType;
 
     private CapabilityApi.CapabilityListener listener;
 

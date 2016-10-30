@@ -24,8 +24,8 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class ChannelCloseSingle extends BaseSingle<Status> {
 
-    private final Channel channel;
-    private final Integer errorCode;
+    final Channel channel;
+    final Integer errorCode;
 
     ChannelCloseSingle(RxWear rxWear, Channel channel, Integer errorCode, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

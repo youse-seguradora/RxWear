@@ -25,7 +25,7 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class DataPutItemSingle extends BaseSingle<DataItem> {
 
-    private final PutDataRequest putDataRequest;
+    final PutDataRequest putDataRequest;
 
     DataPutItemSingle(RxWear rxWear, PutDataRequest putDataRequest, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

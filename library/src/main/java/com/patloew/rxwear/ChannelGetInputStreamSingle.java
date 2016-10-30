@@ -23,7 +23,7 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class ChannelGetInputStreamSingle extends BaseSingle<InputStream> {
 
-    private final Channel channel;
+    final Channel channel;
 
     ChannelGetInputStreamSingle(RxWear rxWear, Channel channel, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

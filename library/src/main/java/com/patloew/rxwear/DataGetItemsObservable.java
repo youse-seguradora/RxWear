@@ -27,8 +27,8 @@ import rx.Subscriber;
  * limitations under the License. */
 class DataGetItemsObservable extends BaseObservable<DataItem> {
 
-    private final Uri uri;
-    private final Integer filterType;
+    final Uri uri;
+    final Integer filterType;
 
     DataGetItemsObservable(RxWear rxWear, Uri uri, Integer filterType, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

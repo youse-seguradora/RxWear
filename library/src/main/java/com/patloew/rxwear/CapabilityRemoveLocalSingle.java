@@ -24,7 +24,7 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class CapabilityRemoveLocalSingle extends BaseSingle<Status> {
 
-    private final String capability;
+    final String capability;
 
     CapabilityRemoveLocalSingle(RxWear rxWear, String capability, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

@@ -28,8 +28,8 @@ import rx.Subscriber;
  * limitations under the License. */
 class DataListenerObservable extends BaseObservable<DataEvent> {
 
-    private final Uri uri;
-    private final Integer filterType;
+    final Uri uri;
+    final Integer filterType;
 
     private DataApi.DataListener listener;
 

@@ -26,10 +26,10 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class ChannelSendFileSingle extends BaseSingle<Status> {
 
-    private final Channel channel;
-    private final Uri uri;
-    private final Long startOffset;
-    private final Long length;
+    final Channel channel;
+    final Uri uri;
+    final Long startOffset;
+    final Long length;
 
     ChannelSendFileSingle(RxWear rxWear, Channel channel, Uri uri, Long startOffset, Long length, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

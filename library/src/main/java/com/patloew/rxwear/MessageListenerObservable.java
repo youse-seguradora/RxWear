@@ -28,8 +28,8 @@ import rx.Subscriber;
  * limitations under the License. */
 class MessageListenerObservable extends BaseObservable<MessageEvent> {
 
-    private final Uri uri;
-    private final Integer filterType;
+    final Uri uri;
+    final Integer filterType;
 
     private MessageApi.MessageListener listener;
 

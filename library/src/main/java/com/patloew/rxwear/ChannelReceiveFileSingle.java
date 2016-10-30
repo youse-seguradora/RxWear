@@ -25,9 +25,9 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class ChannelReceiveFileSingle extends BaseSingle<Status> {
 
-    private final Channel channel;
-    private final Uri uri;
-    private final boolean append;
+    final Channel channel;
+    final Uri uri;
+    final boolean append;
 
     ChannelReceiveFileSingle(RxWear rxWear, Channel channel, Uri uri, boolean append, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

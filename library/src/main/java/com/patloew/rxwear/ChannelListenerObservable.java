@@ -31,7 +31,7 @@ import rx.Subscriber;
  * limitations under the License. */
 class ChannelListenerObservable extends BaseObservable<ChannelEvent> {
 
-    private final Channel channel;
+    final Channel channel;
     private ChannelApi.ChannelListener listener;
 
     ChannelListenerObservable(RxWear rxWear, Channel channel, Long timeout, TimeUnit timeUnit) {

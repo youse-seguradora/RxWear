@@ -24,8 +24,8 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class ChannelOpenSingle extends BaseSingle<Channel> {
 
-    private final String nodeId;
-    private final String path;
+    final String nodeId;
+    final String path;
 
     ChannelOpenSingle(RxWear rxWear, String nodeId, String path, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

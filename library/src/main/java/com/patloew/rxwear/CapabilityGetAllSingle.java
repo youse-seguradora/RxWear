@@ -25,7 +25,7 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class CapabilityGetAllSingle extends BaseSingle<Map<String, CapabilityInfo>> {
 
-    private final int nodeFilter;
+    final int nodeFilter;
 
     CapabilityGetAllSingle(RxWear rxWear, int nodeFilter, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);

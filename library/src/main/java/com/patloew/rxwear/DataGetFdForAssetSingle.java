@@ -26,8 +26,8 @@ import rx.SingleSubscriber;
  * limitations under the License. */
 class DataGetFdForAssetSingle extends BaseSingle<DataApi.GetFdForAssetResult> {
 
-    private final DataItemAsset dataItemAsset;
-    private final Asset asset;
+    final DataItemAsset dataItemAsset;
+    final Asset asset;
 
     DataGetFdForAssetSingle(RxWear rxWear, DataItemAsset dataItemAsset, Asset asset, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
