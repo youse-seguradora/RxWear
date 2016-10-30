@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.3.0
+
+* BREAKING CHANGE: RxWear no longer provides static methods. Create an instance once and share it, e.g. via dependency injection or by providing the instance via your Application class.
+* BREAKING CHANGE: Removed deprecated Data method `getSingle()`. Use `get()` instead.
+* Updated Play Services (9.8.0) and RxJava (1.2.1).
+
 ## Version 1.2.0
 
 * Added `PutDataMap.toObservable()`.

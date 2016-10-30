@@ -6,13 +6,13 @@ This library wraps the Wearable API in [RxJava](https://github.com/ReactiveX/RxJ
 
 # Usage
 
-Initialize RxWear once, preferably in your Application `onCreate()` via `RxWear.init(...)`. The RxWear class is very similar to the Wearable class provided by the Wearable API. Instead of `Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data)` you can use `RxWear.Message.send(nodeId, path, data)`. 
+Create an RxWear instance once, preferably in your Application's `onCreate()` or by using a dependency injection framework. The RxWear class is very similar to the Wearable class provided by the Wearable API. Instead of `Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data)` you can use `rxWear.message().send(nodeId, path, data)`. 
 
-There are also some helper classes to ease the putting/sending of data.
-* `RxWear.Data.PutDataMap`: Use this to put a DataItem containing a DataMap to a path or a pathPrefix with an auto appended ID. 
-* `RxWear.Data.PutSerializable`: Use this to put a DataItem containing a Serializable object to a path or a pathPrefix with an auto appended ID. 
-* `RxWear.Message.SendDataMap`: Use this to send a message containing a DataMap to either one specific node or all remote nodes.
-* `RxWear.Message.SendSerializable`: Use this to send a message containing a Serializable object to either one specific node or all remote nodes.
+There are also some helper methods to ease the putting/sending of data.
+* `rxWear.data().putDataMap()`: Use this to put a DataItem containing a DataMap to a path or a pathPrefix with an auto appended ID. 
+* `rxWear.data().putSerializable()`: Use this to put a DataItem containing a Serializable object to a path or a pathPrefix with an auto appended ID. 
+* `rxWear.message().sendDataMap()`: Use this to send a message containing a DataMap to either one specific node or all remote nodes.
+* `rxWear.message().sendSerializable()`: Use this to send a message containing a Serializable object to either one specific node or all remote nodes.
 
 A few Observable Transformers are included to ease fetching the data. Since these include filtering, they cannot operate on Singles by default, but you can use `single.toObservable().compose(...)`.
 * `DataEventGetDataMap`: Use this Transformer to get the DataMap from a DataEvent and optionally filter the events.
@@ -25,11 +25,11 @@ A few Observable Transformers are included to ease fetching the data. Since thes
 Example:
 
 ```java
-RxWear.init(context);
+RxWear rxWear = rxWear.init(context);
 
 // Phone App
 
-RxWear.Message.SendDataMap.toAllRemoteNodes("/dataMap")
+rxWear.message().sendDataMapToAllRemoteNodes("/dataMap")
 	    .putString("title", "Title")
 	    .putString("message", "My message")
 	    .toObservable()
@@ -37,14 +37,14 @@ RxWear.Message.SendDataMap.toAllRemoteNodes("/dataMap")
 	    	/* do something */
 	    });
 
-RxWear.Data.PutSerializable.urgentTo("/serializable", serializable)
+rxWear.data().putSerializable(serializable).urgent().to("/serializable")
         .subscribe(dataItem -> {
 	        /* do something */
         });
 
 // Wear App
 
-RxWear.Message.listen("/dataMap", MessageApi.FILTER_LITERAL)
+rxWear.message().listen("/dataMap", MessageApi.FILTER_LITERAL)
         .compose(MessageEventGetDataMap.noFilter())
         .subscribe(dataMap -> {
             String title = dataMap.getString("title", getString(R.string.no_message));
@@ -52,7 +52,7 @@ RxWear.Message.listen("/dataMap", MessageApi.FILTER_LITERAL)
             /* do something */
         });
 
-RxWear.Data.listen("/serializable", DataApi.FILTER_LITERAL)
+rxWear.data().listen("/serializable", DataApi.FILTER_LITERAL)
         .compose(DataEventGetSerializable.<MySerializableType>filterByType(DataEvent.TYPE_CHANGED))
         .subscribe(serializable -> {
             /* do something */
@@ -60,7 +60,7 @@ RxWear.Data.listen("/serializable", DataApi.FILTER_LITERAL)
 
 ```
 
-An optional global default timeout for all Wearable API requests made through the library can be set via `RxWear.setDefaultTimeout(...)`. In addition, timeouts can be set when creating a new Observable by providing timeout parameters, e.g. `RxWear.Message.send(nodeId, path, data, 15, TimeUnit.SECONDS)`. These parameters override the default timeout. When a timeout occurs, a StatusException is provided via `onError()`. The timeouts specified here are only used for calls to the Wearable API, e.g. a timeout will not occur when a listener does not emit an item within the specified timeout. The RxJava timeout operators can be used for this use case.
+An optional global default timeout for all Wearable API requests made through the library can be set via `rxWear.setDefaultTimeout(...)`. In addition, timeouts can be set when creating a new Observable by providing timeout parameters, e.g. `rxWear.message().send(nodeId, path, data, 15, TimeUnit.SECONDS)`. These parameters override the default timeout. When a timeout occurs, a StatusException is provided via `onError()`. The timeouts specified here are only used for calls to the Wearable API, e.g. a timeout will not occur when a listener does not emit an item within the specified timeout. The RxJava timeout operators can be used for this use case.
 
 You can also obtain a `Single<GoogleApiClient>`, which connects on subscribe and disconnects on unsubscribe via `GoogleAPIClientSingle.create(...)`.
 
@@ -79,7 +79,7 @@ A basic sample app is available in the `sample` and `wearsample` projects.
 The lib is available on jCenter. Add the following to your `build.gradle`:
 
 	dependencies {
-	    compile 'com.patloew.rxwear:rxwear:1.2.0'
+	    compile 'com.patloew.rxwear:rxwear:1.3.0'
 	}
 
 # Credits
