@@ -7,7 +7,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -29,10 +29,10 @@ class NodeGetLocalSingle extends BaseSingle<Node> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Node> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<Node> emitter) {
         setupWearPendingResult(
                 Wearable.NodeApi.getLocalNode(apiClient),
-                SingleResultCallBack.get(subscriber, NodeApi.GetLocalNodeResult::getNode)
+                SingleResultCallBack.get(emitter, NodeApi.GetLocalNodeResult::getNode)
         );
     }
 }

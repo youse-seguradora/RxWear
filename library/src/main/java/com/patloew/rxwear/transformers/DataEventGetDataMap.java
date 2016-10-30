@@ -4,7 +4,8 @@ import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 
-import rx.Observable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -25,7 +26,7 @@ import rx.Observable;
  * Transformer that optionally filters DataEvents by path and/or type and
  * returns an Observable<DataMap> of the dataMap from the DataItem.
  */
-public class DataEventGetDataMap implements Observable.Transformer<DataEvent, DataMap> {
+public class DataEventGetDataMap implements ObservableTransformer<DataEvent, DataMap> {
 
     private final String path;
     private final boolean isPrefix;
@@ -37,32 +38,32 @@ public class DataEventGetDataMap implements Observable.Transformer<DataEvent, Da
         this.type = type;
     }
 
-    public static Observable.Transformer<DataEvent, DataMap> noFilter() {
+    public static ObservableTransformer<DataEvent, DataMap> noFilter() {
         return new DataEventGetDataMap(null, false, null);
     }
 
-    public static Observable.Transformer<DataEvent, DataMap> filterByPath(String path) {
+    public static ObservableTransformer<DataEvent, DataMap> filterByPath(String path) {
         return new DataEventGetDataMap(path, false, null);
     }
 
-    public static Observable.Transformer<DataEvent, DataMap> filterByPathAndType(String path, int type) {
+    public static ObservableTransformer<DataEvent, DataMap> filterByPathAndType(String path, int type) {
         return new DataEventGetDataMap(path, false, type);
     }
 
-    public static Observable.Transformer<DataEvent, DataMap> filterByPathPrefix(String pathPrefix) {
+    public static ObservableTransformer<DataEvent, DataMap> filterByPathPrefix(String pathPrefix) {
         return new DataEventGetDataMap(pathPrefix, true, null);
     }
 
-    public static Observable.Transformer<DataEvent, DataMap> filterByPathPrefixAndType(String pathPrefix, int type) {
+    public static ObservableTransformer<DataEvent, DataMap> filterByPathPrefixAndType(String pathPrefix, int type) {
         return new DataEventGetDataMap(pathPrefix, true, type);
     }
 
-    public static Observable.Transformer<DataEvent, DataMap> filterByType(int type) {
+    public static ObservableTransformer<DataEvent, DataMap> filterByType(int type) {
         return new DataEventGetDataMap(null, false, type);
     }
 
     @Override
-    public Observable<DataMap> call(Observable<DataEvent> observable) {
+    public Observable<DataMap> apply(Observable<DataEvent> observable) {
         if(type != null) {
             observable = observable.filter(dataEvent -> dataEvent.getType() == type);
         }

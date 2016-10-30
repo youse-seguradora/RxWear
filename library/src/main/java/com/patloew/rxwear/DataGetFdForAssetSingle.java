@@ -9,7 +9,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -36,8 +36,8 @@ class DataGetFdForAssetSingle extends BaseSingle<DataApi.GetFdForAssetResult> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super DataApi.GetFdForAssetResult> subscriber) {
-        ResultCallback<DataApi.GetFdForAssetResult> resultCallback = SingleResultCallBack.get(subscriber);
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<DataApi.GetFdForAssetResult> emitter) {
+        ResultCallback<DataApi.GetFdForAssetResult> resultCallback = SingleResultCallBack.get(emitter);
 
         if(asset != null) {
             setupWearPendingResult(Wearable.DataApi.getFdForAsset(apiClient, asset), resultCallback);

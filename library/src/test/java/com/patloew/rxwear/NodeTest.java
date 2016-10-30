@@ -9,11 +9,13 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import rx.Observable;
-import rx.Single;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 @RunWith(PowerMockRunner.class)
 @PrepareOnlyThisForTest({ Observable.class, Single.class })
@@ -26,6 +28,7 @@ public class NodeTest extends BaseTest {
         MockitoAnnotations.initMocks(this);
         PowerMockito.spy(Single.class);
         PowerMockito.mockStatic(Observable.class);
+        doReturn(100).when(Observable.class, "bufferSize");
         super.setup();
     }
     
@@ -57,13 +60,13 @@ public class NodeTest extends BaseTest {
         rxWear.node().getConnectedNodes();
         rxWear.node().getConnectedNodes(TIMEOUT_TIME, TIMEOUT_TIMEUNIT);
 
-        PowerMockito.verifyStatic(atLeast(2));
+        PowerMockito.verifyStatic(times(2));
         Single.create(captor.capture());
 
         NodeGetConnectedSingle single = captor.getAllValues().get(0);
         assertNoTimeoutSet(single);
 
-        single = captor.getAllValues().get(2);
+        single = captor.getAllValues().get(1);
         assertTimeoutSet(single);
     }
 

@@ -5,7 +5,8 @@ import com.patloew.rxwear.IOUtil;
 
 import java.io.Serializable;
 
-import rx.Observable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -28,7 +29,7 @@ import rx.Observable;
  *
  * Example: DataItemGetSerializable.<T>filterByPath("/path")
  */
-public class DataItemGetSerializable<T extends Serializable> implements Observable.Transformer<DataItem, T> {
+public class DataItemGetSerializable<T extends Serializable> implements ObservableTransformer<DataItem, T> {
 
     private final String path;
     private final boolean isPrefix;
@@ -38,19 +39,19 @@ public class DataItemGetSerializable<T extends Serializable> implements Observab
         this.isPrefix = isPrefix;
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataItem, T> noFilter() {
+    public static <T extends Serializable> ObservableTransformer<DataItem, T> noFilter() {
         return new DataItemGetSerializable<T>(null, false);
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataItem, T> filterByPath(String path) {
+    public static <T extends Serializable> ObservableTransformer<DataItem, T> filterByPath(String path) {
         return new DataItemGetSerializable<T>(path, false);
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataItem, T> filterByPathPrefix(String pathPrefix) {
+    public static <T extends Serializable> ObservableTransformer<DataItem, T> filterByPathPrefix(String pathPrefix) {
         return new DataItemGetSerializable<T>(pathPrefix, true);
     }
     @Override
-    public Observable<T> call(Observable<DataItem> observable) {
+    public Observable<T> apply(Observable<DataItem> observable) {
         if(path != null) {
             observable = observable.filter(dataItem -> {
                 if (isPrefix) {

@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.Channel;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -37,10 +37,10 @@ class ChannelReceiveFileSingle extends BaseSingle<Status> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<Status> emitter) {
         setupWearPendingResult(
                 channel.receiveFile(apiClient, uri, append),
-                SingleResultCallBack.get(subscriber)
+                SingleResultCallBack.get(emitter)
         );
     }
 }

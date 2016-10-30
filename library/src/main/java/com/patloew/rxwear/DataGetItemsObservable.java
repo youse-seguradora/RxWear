@@ -10,7 +10,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
+import io.reactivex.ObservableEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -37,21 +37,21 @@ class DataGetItemsObservable extends BaseObservable<DataItem> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super DataItem> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final ObservableEmitter<DataItem> emitter) {
         ResultCallback<DataItemBuffer> resultCallback = dataItemBuffer -> {
             try {
                 if(!dataItemBuffer.getStatus().isSuccess()) {
-                    subscriber.onError(new StatusException(dataItemBuffer.getStatus()));
+                    emitter.onError(new StatusException(dataItemBuffer.getStatus()));
                 } else {
                     for (int i = 0; i < dataItemBuffer.getCount(); i++) {
-                        if(subscriber.isUnsubscribed()) { break; }
-                        subscriber.onNext(dataItemBuffer.get(i).freeze());
+                        if(emitter.isDisposed()) { break; }
+                        emitter.onNext(dataItemBuffer.get(i).freeze());
                     }
 
-                    subscriber.onCompleted();
+                    emitter.onComplete();
                 }
             } catch(Throwable throwable) {
-                subscriber.onError(throwable);
+                emitter.onError(throwable);
             } finally {
                 dataItemBuffer.release();
             }

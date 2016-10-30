@@ -4,7 +4,6 @@ import android.support.v4.content.ContextCompat;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.Api;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.Wearable;
@@ -18,9 +17,8 @@ import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import rx.Observable;
-import rx.Single;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -64,24 +62,20 @@ public class RxWearTest extends BaseOnSubscribeTest {
 
     @Test
     public void GoogleAPIClientObservable_Success() {
-        TestSubscriber<GoogleApiClient> sub = new TestSubscriber<>();
         GoogleAPIClientSingle single = PowerMockito.spy(new GoogleAPIClientSingle(ctx, new Api[] {}, new Scope[] {}));
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, apiClient);
+        assertSingleValue(Single.create(single).test(), apiClient);
     }
 
     @Test
     public void GoogleAPIClientObservable_ConnectionException() {
-        TestSubscriber<GoogleApiClient> sub = new TestSubscriber<>();
         final GoogleAPIClientSingle single = PowerMockito.spy(new GoogleAPIClientSingle(ctx, new Api[] {}, new Scope[] {}));
 
         setupBaseSingleError(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, GoogleAPIConnectionException.class);
+        assertError(Single.create(single).test(), GoogleAPIConnectionException.class);
     }
 
 }

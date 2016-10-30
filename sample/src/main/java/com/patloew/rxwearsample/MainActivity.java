@@ -12,17 +12,13 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.jakewharton.rxbinding.view.RxView;
-import com.patloew.rxwear.Data;
 import com.patloew.rxwear.GoogleAPIConnectionException;
-import com.patloew.rxwear.Message;
 import com.patloew.rxwear.RxWear;
 import com.patloew.rxwear.transformers.DataItemGetDataMap;
 
-import rx.Emitter;
-import rx.Observable;
-import rx.Single;
-import rx.functions.Action1;
-import rx.subscriptions.CompositeSubscription;
+import hu.akarnokd.rxjava.interop.RxJavaInterop;
+import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText persistentEditText;
     private Button setPersistentButton;
 
-    private CompositeSubscription subscription = new CompositeSubscription();
+    private CompositeDisposable subscription = new CompositeDisposable();
     private Observable<Boolean> validator;
 
     private RxWear rxWear;
@@ -52,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         persistentEditText = (EditText) findViewById(R.id.et_persistenttext);
         setPersistentButton = (Button) findViewById(R.id.bt_set_persistent);
 
-        subscription.add(RxView.clicks(sendButton)
+        subscription.add(RxJavaInterop.toV2Observable(RxView.clicks(sendButton))
                 .doOnNext(click -> hideKeyboard())
                 .flatMap(click2 -> validate())
                 .filter(isValid -> isValid)
@@ -72,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
                         })
         );
 
-        subscription.add(RxView.clicks(setPersistentButton)
+        subscription.add(RxJavaInterop.toV2Observable(RxView.clicks(setPersistentButton))
                 .doOnNext(click -> hideKeyboard())
                 .flatMap(click2 -> rxWear.data().putDataMap().urgent().to("/persistentText").putString("text", persistentEditText.getText().toString()).toObservable())
                 .subscribe(dataItem1 -> Snackbar.make(coordinatorLayout, "Set persistent text", Snackbar.LENGTH_LONG).show(),
@@ -95,10 +91,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        if(subscription != null && !subscription.isUnsubscribed()) {
-            subscription.unsubscribe();
-        }
+        subscription.clear();
     }
 
     private void hideKeyboard() {

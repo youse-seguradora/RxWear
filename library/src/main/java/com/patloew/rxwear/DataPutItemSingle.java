@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -33,10 +33,10 @@ class DataPutItemSingle extends BaseSingle<DataItem> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super DataItem> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<DataItem> emitter) {
         setupWearPendingResult(
                 Wearable.DataApi.putDataItem(apiClient, putDataRequest),
-                SingleResultCallBack.get(subscriber, DataApi.DataItemResult::getDataItem)
+                SingleResultCallBack.get(emitter, DataApi.DataItemResult::getDataItem)
         );
     }
 }

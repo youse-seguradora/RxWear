@@ -7,7 +7,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -32,10 +32,10 @@ class CapabilityAddLocalSingle extends BaseSingle<Status> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<Status> emitter) {
         setupWearPendingResult(
                 Wearable.CapabilityApi.addLocalCapability(apiClient, capability),
-                SingleResultCallBack.get(subscriber, CapabilityApi.AddLocalCapabilityResult::getStatus)
+                SingleResultCallBack.get(emitter, CapabilityApi.AddLocalCapabilityResult::getStatus)
         );
     }
 }

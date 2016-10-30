@@ -12,13 +12,14 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import rx.Observable;
-import rx.Single;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 @RunWith(PowerMockRunner.class)
 @PrepareOnlyThisForTest({ Observable.class, Single.class })
@@ -30,6 +31,7 @@ public class CapabilityTest extends BaseTest {
         MockitoAnnotations.initMocks(this);
         PowerMockito.spy(Single.class);
         PowerMockito.mockStatic(Observable.class);
+        doReturn(100).when(Observable.class, "bufferSize");
         super.setup();
     }
 
@@ -94,14 +96,14 @@ public class CapabilityTest extends BaseTest {
         rxWear.capability().getAll(nodeFilter);
         rxWear.capability().getAll(nodeFilter, TIMEOUT_TIME, TIMEOUT_TIMEUNIT);
 
-        PowerMockito.verifyStatic(atLeast(2));
+        PowerMockito.verifyStatic(times(2));
         Single.create(captor.capture());
 
         CapabilityGetAllSingle single = captor.getAllValues().get(0);
         assertEquals(nodeFilter, single.nodeFilter);
         assertNoTimeoutSet(single);
 
-        single = captor.getAllValues().get(2);
+        single = captor.getAllValues().get(1);
         assertEquals(nodeFilter, single.nodeFilter);
         assertTimeoutSet(single);
     }

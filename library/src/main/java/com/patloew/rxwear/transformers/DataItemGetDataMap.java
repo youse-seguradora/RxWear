@@ -4,7 +4,8 @@ import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 
-import rx.Observable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -25,7 +26,7 @@ import rx.Observable;
  * Transformer that optionally filters DataItems by path and/or type and
  * returns an Observable<DataMap> of the dataMap from the DataItem.
  */
-public class DataItemGetDataMap implements Observable.Transformer<DataItem, DataMap> {
+public class DataItemGetDataMap implements ObservableTransformer<DataItem, DataMap> {
 
     private final String path;
     private final boolean isPrefix;
@@ -35,20 +36,20 @@ public class DataItemGetDataMap implements Observable.Transformer<DataItem, Data
         this.isPrefix = isPrefix;
     }
 
-    public static Observable.Transformer<DataItem, DataMap> noFilter() {
+    public static ObservableTransformer<DataItem, DataMap> noFilter() {
         return new DataItemGetDataMap(null, false);
     }
 
-    public static Observable.Transformer<DataItem, DataMap> filterByPath(String path) {
+    public static ObservableTransformer<DataItem, DataMap> filterByPath(String path) {
         return new DataItemGetDataMap(path, false);
     }
 
-    public static Observable.Transformer<DataItem, DataMap> filterByPathPrefix(String pathPrefix) {
+    public static ObservableTransformer<DataItem, DataMap> filterByPathPrefix(String pathPrefix) {
         return new DataItemGetDataMap(pathPrefix, true);
     }
 
     @Override
-    public Observable<DataMap> call(Observable<DataItem> observable) {
+    public Observable<DataMap> apply(Observable<DataItem> observable) {
         if(path != null) {
             observable = observable.filter(dataItem -> {
                 if (isPrefix) {

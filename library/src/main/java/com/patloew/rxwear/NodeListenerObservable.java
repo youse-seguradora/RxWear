@@ -10,7 +10,7 @@ import com.patloew.rxwear.events.NodeEvent;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
+import io.reactivex.ObservableEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -35,20 +35,20 @@ class NodeListenerObservable extends BaseObservable<NodeEvent> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super NodeEvent> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final ObservableEmitter<NodeEvent> emitter) {
         listener = new NodeApi.NodeListener() {
             @Override
             public void onPeerConnected(Node node) {
-                subscriber.onNext(new NodeEvent(node, true));
+                emitter.onNext(new NodeEvent(node, true));
             }
 
             @Override
             public void onPeerDisconnected(Node node) {
-                subscriber.onNext(new NodeEvent(node, false));
+                emitter.onNext(new NodeEvent(node, false));
             }
         };
 
-        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(emitter);
 
         setupWearPendingResult(Wearable.NodeApi.addListener(apiClient, listener), resultCallback);
     }

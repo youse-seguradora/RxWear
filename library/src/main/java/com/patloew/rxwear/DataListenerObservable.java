@@ -11,7 +11,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
+import io.reactivex.ObservableEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -40,14 +40,14 @@ class DataListenerObservable extends BaseObservable<DataEvent> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super DataEvent> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final ObservableEmitter<DataEvent> emitter) {
         listener = dataEventBuffer -> {
             for(int i=0; i<dataEventBuffer.getCount(); i++) {
-                subscriber.onNext(dataEventBuffer.get(i).freeze());
+                emitter.onNext(dataEventBuffer.get(i).freeze());
             }
         };
 
-        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(emitter);
 
         if(uri != null && filterType != null) {
             setupWearPendingResult(Wearable.DataApi.addListener(apiClient, listener, uri, filterType), resultCallback);

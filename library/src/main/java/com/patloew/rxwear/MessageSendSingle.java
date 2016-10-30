@@ -6,7 +6,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -35,10 +35,10 @@ class MessageSendSingle extends BaseSingle<Integer> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Integer> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<Integer> emitter) {
         setupWearPendingResult(
                 Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data),
-                SingleResultCallBack.get(subscriber, MessageApi.SendMessageResult::getRequestId)
+                SingleResultCallBack.get(emitter, MessageApi.SendMessageResult::getRequestId)
         );
     }
 }

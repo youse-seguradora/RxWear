@@ -11,7 +11,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
+import io.reactivex.ObservableEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -40,10 +40,10 @@ class MessageListenerObservable extends BaseObservable<MessageEvent> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super MessageEvent> subscriber) {
-        listener = subscriber::onNext;
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final ObservableEmitter<MessageEvent> emitter) {
+        listener = emitter::onNext;
 
-        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(emitter);
 
         if(uri != null) {
             setupWearPendingResult(Wearable.MessageApi.addListener(apiClient, listener, uri, filterType), resultCallback);

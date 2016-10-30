@@ -6,7 +6,7 @@ import com.google.android.gms.wearable.Channel;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -31,10 +31,10 @@ class ChannelGetInputStreamSingle extends BaseSingle<InputStream> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super InputStream> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<InputStream> emitter) {
         setupWearPendingResult(
                 channel.getInputStream(apiClient),
-                SingleResultCallBack.get(subscriber, Channel.GetInputStreamResult::getInputStream)
+                SingleResultCallBack.get(emitter, Channel.GetInputStreamResult::getInputStream)
         );
     }
 }

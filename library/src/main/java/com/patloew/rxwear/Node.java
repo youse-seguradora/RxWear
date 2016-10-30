@@ -6,8 +6,8 @@ import com.patloew.rxwear.events.NodeEvent;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Single;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -58,7 +58,7 @@ public class Node {
 
     Observable<com.google.android.gms.wearable.Node> getConnectedNodesInternal(Long timeout, TimeUnit timeUnit) {
         return Single.create(new NodeGetConnectedSingle(rxWear, timeout, timeUnit))
-                .flatMapObservable(Observable::from);
+                .flatMapObservable(Observable::fromIterable);
     }
 
     // getLocalNode

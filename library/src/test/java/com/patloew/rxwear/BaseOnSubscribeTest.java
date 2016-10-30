@@ -21,12 +21,9 @@ import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.reflect.Whitebox;
 
-import java.lang.reflect.Field;
-import java.util.Set;
-
-import rx.SingleSubscriber;
-import rx.Subscriber;
-import rx.observers.TestSubscriber;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.SingleEmitter;
+import io.reactivex.observers.TestObserver;
 
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -67,26 +64,10 @@ public abstract class BaseOnSubscribeTest extends BaseTest {
     // Mock GoogleApiClient connection success behaviour
     protected <T> void setupBaseObservableSuccess(final BaseObservable<T> baseObservable, final GoogleApiClient apiClient) {
         doAnswer(invocation -> {
-            final Subscriber<? super T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+            final ObservableEmitter<T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).emitter;
 
             doAnswer(invocation1 -> {
                 baseObservable.onGoogleApiClientReady(apiClient, subscriber);
-                return null;
-            }).when(apiClient).connect();
-
-            return apiClient;
-        }).when(baseObservable).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
-    }
-
-    // Mock GoogleApiClient resolution behaviour
-    protected <T> void setupBaseObservableResolution(final BaseObservable<T> baseObservable, final GoogleApiClient apiClient) {
-        doAnswer(invocation -> {
-            doAnswer(invocation1 -> {
-                try {
-                    final Field observableSetField = BaseRx.class.getDeclaredField("observableSet");
-                    observableSetField.setAccessible(true);
-                    ((Set<BaseRx>)observableSetField.get(baseObservable)).add(baseObservable);
-                } catch(Exception e) { }
                 return null;
             }).when(apiClient).connect();
 
@@ -102,7 +83,7 @@ public abstract class BaseOnSubscribeTest extends BaseTest {
     // Mock GoogleApiClient connection success behaviour
     protected <T> void setupBaseSingleSuccess(final BaseSingle<T> baseSingle, final GoogleApiClient apiClient) {
         doAnswer(invocation -> {
-            final SingleSubscriber<? super T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+            final SingleEmitter<T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).emitter;
 
             doAnswer(invocation1 -> {
                 baseSingle.onGoogleApiClientReady(apiClient, subscriber);
@@ -116,7 +97,7 @@ public abstract class BaseOnSubscribeTest extends BaseTest {
     // Mock GoogleApiClient connection error behaviour
     protected <T> void setupBaseObservableError(final BaseObservable<T> baseObservable) {
         doAnswer(invocation -> {
-            final Subscriber<? super T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+            final ObservableEmitter<T> subscriber = ((BaseObservable.ApiClientConnectionCallbacks)invocation.getArguments()[0]).emitter;
 
             doAnswer(invocation1 -> {
                 subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
@@ -130,7 +111,7 @@ public abstract class BaseOnSubscribeTest extends BaseTest {
     // Mock GoogleApiClient connection error behaviour
     protected <T> void setupBaseSingleError(final BaseSingle<T> baseSingle) {
         doAnswer(invocation -> {
-            final SingleSubscriber<? super T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).subscriber;
+            final SingleEmitter<T> subscriber = ((BaseSingle.ApiClientConnectionCallbacks)invocation.getArguments()[0]).emitter;
 
             doAnswer(invocation1 -> {
                 subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
@@ -149,22 +130,19 @@ public abstract class BaseOnSubscribeTest extends BaseTest {
         }).when(pendingResult).setResultCallback(Matchers.<ResultCallback>any());
     }
 
-    protected static void assertError(TestSubscriber sub, Class<? extends Throwable> errorClass) {
+    protected static void assertError(TestObserver sub, Class<? extends Throwable> errorClass) {
         sub.assertError(errorClass);
         sub.assertNoValues();
-        sub.assertUnsubscribed();
     }
 
     @SuppressWarnings("unchecked")
-    protected static void assertSingleValue(TestSubscriber sub, Object value) {
-        sub.assertCompleted();
-        sub.assertUnsubscribed();
+    protected static void assertSingleValue(TestObserver sub, Object value) {
+        sub.assertComplete();
         sub.assertValue(value);
     }
 
-    protected static void assertNoValue(TestSubscriber sub) {
-        sub.assertCompleted();
-        sub.assertUnsubscribed();
+    protected static void assertNoValue(TestObserver sub) {
+        sub.assertComplete();
         sub.assertNoValues();
     }
 }

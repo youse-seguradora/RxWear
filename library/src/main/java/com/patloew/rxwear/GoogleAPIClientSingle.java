@@ -7,8 +7,8 @@ import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
 
-import rx.Single;
-import rx.SingleSubscriber;
+import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
 
 /* Copyright (C) 2015 Michał Charmas (http://blog.charmas.pl)
  *
@@ -45,7 +45,7 @@ public class GoogleAPIClientSingle extends BaseSingle<GoogleApiClient> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleSubscriber<? super GoogleApiClient> observer) {
-        observer.onSuccess(apiClient);
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleEmitter<GoogleApiClient> emitter) {
+        emitter.onSuccess(apiClient);
     }
 }

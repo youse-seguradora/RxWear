@@ -27,9 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import rx.Observable;
-import rx.Single;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.observers.TestObserver;
 
 import static org.mockito.Mockito.when;
 
@@ -52,7 +52,6 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
 
     @Test
     public void ChannelListenerObservable_Success() {
-        TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
         ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, null, null, null));
 
         setPendingResultValue(status);
@@ -60,15 +59,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channelApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(ChannelApi.ChannelListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        TestObserver<ChannelEvent> sub = Observable.create(observable).test();
 
-        sub.assertNoTerminalEvent();
+        sub.assertNotTerminated();
         sub.assertNoValues();
     }
 
     @Test
     public void ChannelListenerObservable_StatusException() {
-        TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
         ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, null, null, null));
 
         setPendingResultValue(status);
@@ -76,14 +74,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channelApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(ChannelApi.ChannelListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Observable.create(observable).test(), StatusException.class);
     }
 
     @Test
     public void ChannelListenerObservable_Channel_Success() {
-        TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
         ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, channel, null, null));
 
         setPendingResultValue(status);
@@ -91,15 +87,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(ChannelApi.ChannelListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        TestObserver<ChannelEvent> sub = Observable.create(observable).test();
 
-        sub.assertNoTerminalEvent();
+        sub.assertNotTerminated();
         sub.assertNoValues();
     }
 
     @Test
     public void ChannelListenerObservable_Channel_StatusException() {
-        TestSubscriber<ChannelEvent> sub = new TestSubscriber<>();
         ChannelListenerObservable observable = PowerMockito.spy(new ChannelListenerObservable(rxWear, channel, null, null));
 
         setPendingResultValue(status);
@@ -107,16 +102,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(ChannelApi.ChannelListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Observable.create(observable).test(), StatusException.class);
     }
 
     // ChannelCloseSingle
 
     @Test
     public void ChannelCloseSingle_Success() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, null, null, null));
 
         setPendingResultValue(status);
@@ -124,14 +117,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.close(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, status);
+        assertSingleValue(Single.create(single).test(), status);
     }
 
     @Test
     public void ChannelCloseSingle_StatusException() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, null, null, null));
 
         setPendingResultValue(status);
@@ -139,14 +130,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.close(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     @Test
     public void ChannelCloseSingle_ErrorCode_Success() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, 1, null, null));
 
         setPendingResultValue(status);
@@ -154,14 +143,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.close(apiClient, 1)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, status);
+        assertSingleValue(Single.create(single).test(), status);
     }
 
     @Test
     public void ChannelCloseSingle_ErrorCode_StatusException() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelCloseSingle single = PowerMockito.spy(new ChannelCloseSingle(rxWear, channel, 1, null, null));
 
         setPendingResultValue(status);
@@ -169,16 +156,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.close(apiClient, 1)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     // ChannelSendFileSingle
 
     @Test
     public void ChannelSendFileSingle_Success() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, null, null, null, null));
 
         setPendingResultValue(status);
@@ -186,14 +171,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.sendFile(apiClient, uri)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, status);
+        assertSingleValue(Single.create(single).test(), status);
     }
 
     @Test
     public void ChannelSendFileSingle_StatusException() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, null, null, null, null));
 
         setPendingResultValue(status);
@@ -201,14 +184,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.sendFile(apiClient, uri)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     @Test
     public void ChannelSendFileSingle_OffsetLength_Success() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, 1l, 2l, null, null));
 
         setPendingResultValue(status);
@@ -216,14 +197,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.sendFile(apiClient, uri, 1l, 2l)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, status);
+        assertSingleValue(Single.create(single).test(), status);
     }
 
     @Test
     public void ChannelSendFileSingle_OffsetLength_StatusException() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelSendFileSingle single = PowerMockito.spy(new ChannelSendFileSingle(rxWear, channel, uri, 1l, 2l, null, null));
 
         setPendingResultValue(status);
@@ -231,16 +210,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.sendFile(apiClient, uri, 1l, 2l)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     // ChannelOpenSingle
 
     @Test
     public void ChannelOpenSingle_Success() {
-        TestSubscriber<com.google.android.gms.wearable.Channel> sub = new TestSubscriber<>();
         ChannelApi.OpenChannelResult result = Mockito.mock(ChannelApi.OpenChannelResult.class);
         String nodeId = "nodeId";
         String path ="path";
@@ -253,14 +230,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channelApi.openChannel(apiClient, nodeId, path)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, channel);
+        assertSingleValue(Single.create(single).test(), channel);
     }
 
     @Test
     public void ChannelOpenSingle_NullChannel_IOException() {
-        TestSubscriber<com.google.android.gms.wearable.Channel> sub = new TestSubscriber<>();
         ChannelApi.OpenChannelResult result = Mockito.mock(ChannelApi.OpenChannelResult.class);
         String nodeId = "nodeId";
         String path ="path";
@@ -273,17 +248,15 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channelApi.openChannel(apiClient, nodeId, path)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, IOException.class);
+        assertError(Single.create(single).test(), IOException.class);
     }
 
     @Test
     public void ChannelOpenSingle_StatusException() {
-        TestSubscriber<com.google.android.gms.wearable.Channel> sub = new TestSubscriber<>();
         ChannelApi.OpenChannelResult result = Mockito.mock(ChannelApi.OpenChannelResult.class);
         String nodeId = "nodeId";
-        String path ="path";
+        String path = "path";
         ChannelOpenSingle single = PowerMockito.spy(new ChannelOpenSingle(rxWear, nodeId, path, null, null));
 
         when(result.getStatus()).thenReturn(status);
@@ -293,16 +266,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channelApi.openChannel(apiClient, nodeId, path)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     // ChannelGetInputStreamObservable
 
     @Test
     public void ChannelGetInputStreamSingle_Success() {
-        TestSubscriber<InputStream> sub = new TestSubscriber<>();
         com.google.android.gms.wearable.Channel.GetInputStreamResult result = Mockito.mock(com.google.android.gms.wearable.Channel.GetInputStreamResult.class);
         InputStream inputStream = Mockito.mock(InputStream.class);
         ChannelGetInputStreamSingle single = PowerMockito.spy(new ChannelGetInputStreamSingle(rxWear, channel, null, null));
@@ -314,14 +285,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.getInputStream(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, inputStream);
+        assertSingleValue(Single.create(single).test(), inputStream);
     }
 
     @Test
     public void ChannelGetInputStreamSingle_StatusException() {
-        TestSubscriber<InputStream> sub = new TestSubscriber<>();
         com.google.android.gms.wearable.Channel.GetInputStreamResult result = Mockito.mock(com.google.android.gms.wearable.Channel.GetInputStreamResult.class);
         InputStream inputStream = Mockito.mock(InputStream.class);
         ChannelGetInputStreamSingle single = PowerMockito.spy(new ChannelGetInputStreamSingle(rxWear, channel, null, null));
@@ -333,16 +302,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.getInputStream(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     // ChannelGetOutputStreamSingle
 
     @Test
     public void ChannelGetOutputStreamSingle_Success() {
-        TestSubscriber<OutputStream> sub = new TestSubscriber<>();
         com.google.android.gms.wearable.Channel.GetOutputStreamResult result = Mockito.mock(com.google.android.gms.wearable.Channel.GetOutputStreamResult.class);
         OutputStream outputStream = Mockito.mock(OutputStream.class);
         ChannelGetOutputStreamSingle single = PowerMockito.spy(new ChannelGetOutputStreamSingle(rxWear, channel, null, null));
@@ -354,14 +321,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.getOutputStream(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, outputStream);
+        assertSingleValue(Single.create(single).test(), outputStream);
     }
 
     @Test
     public void ChannelGetOutputStreamSingle_StatusException() {
-        TestSubscriber<OutputStream> sub = new TestSubscriber<>();
         com.google.android.gms.wearable.Channel.GetOutputStreamResult result = Mockito.mock(com.google.android.gms.wearable.Channel.GetOutputStreamResult.class);
         OutputStream outputStream = Mockito.mock(OutputStream.class);
         ChannelGetOutputStreamSingle single = PowerMockito.spy(new ChannelGetOutputStreamSingle(rxWear, channel, null, null));
@@ -373,16 +338,14 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.getOutputStream(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     // ChannelReceiveFileSingle
 
     @Test
     public void ChannelReceiveFileSingle_Success() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelReceiveFileSingle single = PowerMockito.spy(new ChannelReceiveFileSingle(rxWear, channel, uri, false, null, null));
 
         setPendingResultValue(status);
@@ -390,14 +353,12 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.receiveFile(apiClient, uri, false)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, status);
+        assertSingleValue(Single.create(single).test(), status);
     }
 
     @Test
     public void ChannelReceiveFileSingle_StatusException() {
-        TestSubscriber<Status> sub = new TestSubscriber<>();
         ChannelReceiveFileSingle single = PowerMockito.spy(new ChannelReceiveFileSingle(rxWear, channel, uri, false, null, null));
 
         setPendingResultValue(status);
@@ -405,8 +366,7 @@ public class ChannelOnSubscribeTest extends BaseOnSubscribeTest {
         when(channel.receiveFile(apiClient, uri, false)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 }

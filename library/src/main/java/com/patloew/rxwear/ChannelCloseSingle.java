@@ -7,7 +7,7 @@ import com.google.android.gms.wearable.Channel;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -34,8 +34,8 @@ class ChannelCloseSingle extends BaseSingle<Status> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Status> subscriber) {
-        ResultCallback<Status> resultCallBack = SingleResultCallBack.get(subscriber);
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<Status> emitter) {
+        ResultCallback<Status> resultCallBack = SingleResultCallBack.get(emitter);
 
         if(errorCode != null) {
             setupWearPendingResult(channel.close(apiClient, errorCode), resultCallBack);

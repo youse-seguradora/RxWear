@@ -14,7 +14,7 @@ import com.patloew.rxwear.events.OutputClosedEvent;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
+import io.reactivex.ObservableEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -40,26 +40,26 @@ class ChannelListenerObservable extends BaseObservable<ChannelEvent> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super ChannelEvent> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final ObservableEmitter<ChannelEvent> emitter) {
         listener = new ChannelApi.ChannelListener() {
             @Override public void onChannelOpened(Channel channel) {
-                subscriber.onNext(new ChannelOpenedEvent(channel));
+                emitter.onNext(new ChannelOpenedEvent(channel));
             }
 
             @Override public void onChannelClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
-                subscriber.onNext(new ChannelClosedEvent(channel, closeReason, appSpecificErrorCode));
+                emitter.onNext(new ChannelClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
 
             @Override public void onInputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
-                subscriber.onNext(new InputClosedEvent(channel, closeReason, appSpecificErrorCode));
+                emitter.onNext(new InputClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
 
             @Override public void onOutputClosed(Channel channel, int closeReason, int appSpecificErrorCode) {
-                subscriber.onNext(new OutputClosedEvent(channel, closeReason, appSpecificErrorCode));
+                emitter.onNext(new OutputClosedEvent(channel, closeReason, appSpecificErrorCode));
             }
         };
 
-        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(emitter);
 
         if(channel != null) {
             setupWearPendingResult(channel.addListener(apiClient, listener), resultCallback);

@@ -11,9 +11,8 @@ import com.google.android.gms.common.api.Scope;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Single;
-import rx.SingleSubscriber;
-import rx.subscriptions.Subscriptions;
+import io.reactivex.SingleEmitter;
+import io.reactivex.SingleOnSubscribe;
 
 /* Copyright (C) 2015 Michał Charmas (http://blog.charmas.pl)
  *
@@ -34,7 +33,7 @@ import rx.subscriptions.Subscriptions;
  * FILE MODIFIED by Patrick Löwenstein, 2016
  *
  */
-abstract class BaseSingle<T> extends BaseRx<T> implements Single.OnSubscribe<T> {
+abstract class BaseSingle<T> extends BaseRx<T> implements SingleOnSubscribe<T> {
 
     protected BaseSingle(@NonNull RxWear rxWear, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
@@ -45,50 +44,50 @@ abstract class BaseSingle<T> extends BaseRx<T> implements Single.OnSubscribe<T> 
     }
 
     @Override
-    public final void call(SingleSubscriber<? super T> subscriber) {
-        final GoogleApiClient apiClient = createApiClient(new ApiClientConnectionCallbacks(subscriber));
+    public final void subscribe(SingleEmitter<T> emitter) {
+        final GoogleApiClient apiClient = createApiClient(new ApiClientConnectionCallbacks(emitter));
 
         try {
             apiClient.connect();
         } catch (Throwable ex) {
-            subscriber.onError(ex);
+            emitter.onError(ex);
         }
 
-        subscriber.add(Subscriptions.create(() -> {
+        emitter.setCancellable(() -> {
             if (apiClient.isConnected() || apiClient.isConnecting()) {
                 onUnsubscribed(apiClient);
                 apiClient.disconnect();
             }
-        }));
+        });
     }
 
-    protected abstract void onGoogleApiClientReady(GoogleApiClient apiClient, SingleSubscriber<? super T> subscriber);
+    protected abstract void onGoogleApiClientReady(GoogleApiClient apiClient, SingleEmitter<T> emitter);
 
     protected class ApiClientConnectionCallbacks extends BaseRx.ApiClientConnectionCallbacks {
 
-        final protected SingleSubscriber<? super T> subscriber;
+        final protected SingleEmitter<T> emitter;
 
-        private ApiClientConnectionCallbacks(SingleSubscriber<? super T> subscriber) {
-            this.subscriber = subscriber;
+        private ApiClientConnectionCallbacks(SingleEmitter<T> emitter) {
+            this.emitter = emitter;
         }
 
         @Override
         public void onConnected(Bundle bundle) {
             try {
-                onGoogleApiClientReady(apiClient, subscriber);
+                onGoogleApiClientReady(apiClient, emitter);
             } catch (Throwable ex) {
-                subscriber.onError(ex);
+                emitter.onError(ex);
             }
         }
 
         @Override
         public void onConnectionSuspended(int cause) {
-            subscriber.onError(new GoogleAPIConnectionSuspendedException(cause));
+            emitter.onError(new GoogleAPIConnectionSuspendedException(cause));
         }
 
         @Override
         public void onConnectionFailed(ConnectionResult connectionResult) {
-            subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
+            emitter.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
         }
     }
 }

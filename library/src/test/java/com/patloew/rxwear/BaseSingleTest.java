@@ -17,16 +17,16 @@ import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import rx.Single;
-import rx.SingleSubscriber;
-import rx.observers.TestSubscriber;
+import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
+import io.reactivex.observers.TestObserver;
 
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 @RunWith(PowerMockRunner.class)
-@PrepareOnlyThisForTest({ ContextCompat.class, Wearable.class, Status.class, ConnectionResult.class, SingleSubscriber.class })
+@PrepareOnlyThisForTest({ ContextCompat.class, Wearable.class, Status.class, ConnectionResult.class, SingleEmitter.class })
 @SuppressStaticInitializationFor("com.google.android.gms.wearable.Wearable")
 public class BaseSingleTest extends BaseOnSubscribeTest {
 
@@ -39,11 +39,10 @@ public class BaseSingleTest extends BaseOnSubscribeTest {
     @Test
     public void BaseObservable_ApiClient_Connected() {
         final Object object = new Object();
-        TestSubscriber<Object> sub = new TestSubscriber<>();
         BaseSingle<Object> single = spy(new BaseSingle<Object>(rxWear, null, null) {
             @Override
-            protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleSubscriber<? super Object> subscriber) {
-                subscriber.onSuccess(object);
+            protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleEmitter<Object> emitter) {
+                emitter.onSuccess(object);
             }
         });
 
@@ -54,20 +53,19 @@ public class BaseSingleTest extends BaseOnSubscribeTest {
             return apiClient;
         }).when(single).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
 
-        Single.create(single).subscribe(sub);
+        TestObserver<Object> sub = Single.create(single).test();
 
         sub.assertValue(object);
-        sub.assertCompleted();
+        sub.assertComplete();
     }
 
     @Test
     public void BaseObservable_ApiClient_ConnectionSuspended() {
         final Object object = new Object();
-        TestSubscriber<Object> sub = new TestSubscriber<>();
         BaseSingle<Object> single = spy(new BaseSingle<Object>(rxWear, null, null) {
             @Override
-            protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleSubscriber<? super Object> subscriber) {
-                subscriber.onSuccess(object);
+            protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleEmitter<Object> emitter) {
+                emitter.onSuccess(object);
             }
         });
 
@@ -78,7 +76,7 @@ public class BaseSingleTest extends BaseOnSubscribeTest {
             return apiClient;
         }).when(single).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
 
-        Single.create(single).subscribe(sub);
+        TestObserver<Object> sub = Single.create(single).test();
 
         sub.assertNoValues();
         sub.assertError(GoogleAPIConnectionSuspendedException.class);
@@ -87,11 +85,10 @@ public class BaseSingleTest extends BaseOnSubscribeTest {
     @Test
     public void BaseObservable_ApiClient_ConnectionFailed_NoResulution() {
         final Object object = new Object();
-        TestSubscriber<Object> sub = new TestSubscriber<>();
         BaseSingle<Object> single = spy(new BaseSingle<Object>(ctx, new Api[] {}, null) {
             @Override
-            protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleSubscriber<? super Object> subscriber) {
-                subscriber.onSuccess(object);
+            protected void onGoogleApiClientReady(GoogleApiClient apiClient, SingleEmitter<Object> emitter) {
+                emitter.onSuccess(object);
             }
         });
 
@@ -104,7 +101,7 @@ public class BaseSingleTest extends BaseOnSubscribeTest {
             return apiClient;
         }).when(single).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
 
-        Single.create(single).subscribe(sub);
+        TestObserver<Object> sub = Single.create(single).test();
 
         sub.assertNoValues();
         sub.assertError(GoogleAPIConnectionException.class);

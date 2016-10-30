@@ -5,7 +5,8 @@ import com.patloew.rxwear.IOUtil;
 
 import java.io.Serializable;
 
-import rx.Observable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
 
 
 /* Copyright 2016 Patrick Löwenstein
@@ -29,7 +30,7 @@ import rx.Observable;
  *
  * Example: DataEventGetSerializable.<T>filterByPathAndType("/path", DataEvent.TYPE_CHANGED)
  */
-public class DataEventGetSerializable<T extends Serializable> implements Observable.Transformer<DataEvent, T> {
+public class DataEventGetSerializable<T extends Serializable> implements ObservableTransformer<DataEvent, T> {
 
     private final String path;
     private final boolean isPrefix;
@@ -42,32 +43,32 @@ public class DataEventGetSerializable<T extends Serializable> implements Observa
 
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataEvent, T> noFilter() {
+    public static <T extends Serializable> ObservableTransformer<DataEvent, T> noFilter() {
         return new DataEventGetSerializable<T>(null, false, null);
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataEvent, T> filterByPath(String path) {
+    public static <T extends Serializable> ObservableTransformer<DataEvent, T> filterByPath(String path) {
         return new DataEventGetSerializable<T>(path, false, null);
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataEvent, T> filterByPathAndType(String path, int type) {
+    public static <T extends Serializable> ObservableTransformer<DataEvent, T> filterByPathAndType(String path, int type) {
         return new DataEventGetSerializable<T>(path, false, type);
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataEvent, T> filterByPathPrefix(String pathPrefix) {
+    public static <T extends Serializable> ObservableTransformer<DataEvent, T> filterByPathPrefix(String pathPrefix) {
         return new DataEventGetSerializable<T>(pathPrefix, true, null);
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataEvent, T> filterByPathPrefixAndType(String pathPrefix, int type) {
+    public static <T extends Serializable> ObservableTransformer<DataEvent, T> filterByPathPrefixAndType(String pathPrefix, int type) {
         return new DataEventGetSerializable<T>(pathPrefix, true, type);
     }
 
-    public static <T extends Serializable> Observable.Transformer<DataEvent, T> filterByType(int type) {
+    public static <T extends Serializable> ObservableTransformer<DataEvent, T> filterByType(int type) {
         return new DataEventGetSerializable<T>(null, false, type);
     }
 
     @Override
-    public Observable<T> call(Observable<DataEvent> observable) {
+    public Observable<T> apply(Observable<DataEvent> observable) {
         if(type != null) {
             observable = observable.filter(dataEvent -> dataEvent.getType() == type);
         }

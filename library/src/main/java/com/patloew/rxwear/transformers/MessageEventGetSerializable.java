@@ -5,7 +5,8 @@ import com.patloew.rxwear.IOUtil;
 
 import java.io.Serializable;
 
-import rx.Observable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -28,7 +29,7 @@ import rx.Observable;
  *
  * Example: MessageEventGetSerializable.<T>filterByPath("/path")
  */
-public class MessageEventGetSerializable<T extends Serializable> implements Observable.Transformer<MessageEvent, T> {
+public class MessageEventGetSerializable<T extends Serializable> implements ObservableTransformer<MessageEvent, T> {
 
     private final String path;
     private final boolean isPrefix;
@@ -38,20 +39,20 @@ public class MessageEventGetSerializable<T extends Serializable> implements Obse
         this.isPrefix = isPrefix;
     }
 
-    public static <T extends Serializable> Observable.Transformer<MessageEvent, T> noFilter() {
+    public static <T extends Serializable> ObservableTransformer<MessageEvent, T> noFilter() {
         return new MessageEventGetSerializable<T>(null, false);
     }
 
-    public static <T extends Serializable> Observable.Transformer<MessageEvent, T> filterByPath(String path) {
+    public static <T extends Serializable> ObservableTransformer<MessageEvent, T> filterByPath(String path) {
         return new MessageEventGetSerializable<T>(path, false);
     }
 
-    public static <T extends Serializable> Observable.Transformer<MessageEvent, T> filterByPathPrefix(String pathPrefix) {
+    public static <T extends Serializable> ObservableTransformer<MessageEvent, T> filterByPathPrefix(String pathPrefix) {
         return new MessageEventGetSerializable<T>(pathPrefix, true);
     }
 
     @Override
-    public Observable<T> call(Observable<MessageEvent> observable) {
+    public Observable<T> apply(Observable<MessageEvent> observable) {
         if(path != null) {
             observable = observable.filter(messageEvent -> {
                 if (isPrefix) {

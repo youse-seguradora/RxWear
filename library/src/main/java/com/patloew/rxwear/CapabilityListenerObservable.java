@@ -11,7 +11,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscriber;
+import io.reactivex.ObservableEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -42,10 +42,10 @@ class CapabilityListenerObservable extends BaseObservable<CapabilityInfo> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final Subscriber<? super CapabilityInfo> subscriber) {
-        listener = subscriber::onNext;
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final ObservableEmitter<CapabilityInfo> emitter) {
+        listener = emitter::onNext;
 
-        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(subscriber);
+        ResultCallback<Status> resultCallback = new StatusErrorResultCallBack(emitter);
 
         if(capability != null) {
             setupWearPendingResult(Wearable.CapabilityApi.addCapabilityListener(apiClient, listener, capability), resultCallback);

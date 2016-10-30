@@ -8,8 +8,8 @@ import com.google.android.gms.wearable.CapabilityInfo;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Single;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -66,7 +66,7 @@ public class Capability {
 
     private Observable<CapabilityInfo> getAllInternal(int nodeFilter, Long timeout, TimeUnit timeUnit) {
         return Single.create(new CapabilityGetAllSingle(rxWear, nodeFilter, timeout, timeUnit))
-                .flatMapObservable(capabilityInfoMap -> Observable.from(capabilityInfoMap.values()));
+                .flatMapObservable(capabilityInfoMap -> Observable.fromIterable(capabilityInfoMap.values()));
     }
 
     // get

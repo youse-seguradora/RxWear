@@ -23,9 +23,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.util.ArrayList;
 import java.util.List;
 
-import rx.Observable;
-import rx.Single;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.observers.TestObserver;
 
 import static org.mockito.Mockito.when;
 
@@ -45,7 +45,6 @@ public class NodeOnSubscribeTest extends BaseOnSubscribeTest {
 
     @Test
     public void NodeListenerObservable_Success() {
-        TestSubscriber<NodeEvent> sub = new TestSubscriber<>();
         NodeListenerObservable observable = PowerMockito.spy(new NodeListenerObservable(rxWear, null, null));
 
         setPendingResultValue(status);
@@ -53,15 +52,14 @@ public class NodeOnSubscribeTest extends BaseOnSubscribeTest {
         when(nodeApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(NodeApi.NodeListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        TestObserver<NodeEvent> sub = Observable.create(observable).test();
 
-        sub.assertNoTerminalEvent();
+        sub.assertNotTerminated();
         sub.assertNoValues();
     }
 
     @Test
     public void NodeListenerObservable_StatusException() {
-        TestSubscriber<NodeEvent> sub = new TestSubscriber<>();
         NodeListenerObservable observable = PowerMockito.spy(new NodeListenerObservable(rxWear, null, null));
 
         setPendingResultValue(status);
@@ -69,16 +67,14 @@ public class NodeOnSubscribeTest extends BaseOnSubscribeTest {
         when(nodeApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(NodeApi.NodeListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Observable.create(observable).test(), StatusException.class);
     }
 
     // NodeGetConnectedSingle
 
     @Test
     public void NodeGetConnectedSingle_Success() {
-        TestSubscriber<List<com.google.android.gms.wearable.Node>> sub = new TestSubscriber<>();
         NodeApi.GetConnectedNodesResult result = Mockito.mock(NodeApi.GetConnectedNodesResult.class);
         NodeGetConnectedSingle single = PowerMockito.spy(new NodeGetConnectedSingle(rxWear, null, null));
 
@@ -91,14 +87,12 @@ public class NodeOnSubscribeTest extends BaseOnSubscribeTest {
         when(nodeApi.getConnectedNodes(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, nodeList);
+        assertSingleValue(Single.create(single).test(), nodeList);
     }
 
     @Test
     public void NodeGetConnectedSingle_StatusException() {
-        TestSubscriber<List<com.google.android.gms.wearable.Node>> sub = new TestSubscriber<>();
         NodeApi.GetConnectedNodesResult result = Mockito.mock(NodeApi.GetConnectedNodesResult.class);
         NodeGetConnectedSingle single = PowerMockito.spy(new NodeGetConnectedSingle(rxWear, null, null));
 
@@ -111,16 +105,14 @@ public class NodeOnSubscribeTest extends BaseOnSubscribeTest {
         when(nodeApi.getConnectedNodes(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
     // NodeGetLocalSingle
 
     @Test
     public void NodeGetLocalSingle_Success() {
-        TestSubscriber<com.google.android.gms.wearable.Node> sub = new TestSubscriber<>();
         NodeApi.GetLocalNodeResult result = Mockito.mock(NodeApi.GetLocalNodeResult.class);
         com.google.android.gms.wearable.Node node = Mockito.mock(com.google.android.gms.wearable.Node.class);
         NodeGetLocalSingle single = PowerMockito.spy(new NodeGetLocalSingle(rxWear, null, null));
@@ -132,14 +124,12 @@ public class NodeOnSubscribeTest extends BaseOnSubscribeTest {
         when(nodeApi.getLocalNode(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, node);
+        assertSingleValue(Single.create(single).test(), node);
     }
 
     @Test
     public void NodeGetLocalSingle_StatusException() {
-        TestSubscriber<com.google.android.gms.wearable.Node> sub = new TestSubscriber<>();
         NodeApi.GetLocalNodeResult result = Mockito.mock(NodeApi.GetLocalNodeResult.class);
         com.google.android.gms.wearable.Node node = Mockito.mock(com.google.android.gms.wearable.Node.class);
         NodeGetLocalSingle single = PowerMockito.spy(new NodeGetLocalSingle(rxWear, null, null));
@@ -151,8 +141,7 @@ public class NodeOnSubscribeTest extends BaseOnSubscribeTest {
         when(nodeApi.getLocalNode(apiClient)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 }

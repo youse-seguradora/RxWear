@@ -8,9 +8,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.subscriptions.Subscriptions;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 
 /* Copyright (C) 2015 Michał Charmas (http://blog.charmas.pl)
  *
@@ -31,57 +30,57 @@ import rx.subscriptions.Subscriptions;
  * FILE MODIFIED by Patrick Löwenstein, 2016
  *
  */
-abstract class BaseObservable<T> extends BaseRx<T> implements Observable.OnSubscribe<T> {
+abstract class BaseObservable<T> extends BaseRx<T> implements ObservableOnSubscribe<T> {
 
     protected BaseObservable(@NonNull RxWear rxWear, Long timeout, TimeUnit timeUnit) {
         super(rxWear, timeout, timeUnit);
     }
 
     @Override
-    public final void call(Subscriber<? super T> subscriber) {
-        final GoogleApiClient apiClient = createApiClient(new ApiClientConnectionCallbacks(subscriber));
+    public final void subscribe(ObservableEmitter<T> emitter) {
+        final GoogleApiClient apiClient = createApiClient(new ApiClientConnectionCallbacks(emitter));
 
         try {
             apiClient.connect();
         } catch (Throwable ex) {
-            subscriber.onError(ex);
+            emitter.onError(ex);
         }
 
-        subscriber.add(Subscriptions.create(() -> {
+        emitter.setCancellable(() -> {
             if (apiClient.isConnected() || apiClient.isConnecting()) {
                 onUnsubscribed(apiClient);
                 apiClient.disconnect();
             }
-        }));
+        });
     }
 
-    protected abstract void onGoogleApiClientReady(GoogleApiClient apiClient, Subscriber<? super T> subscriber);
+    protected abstract void onGoogleApiClientReady(GoogleApiClient apiClient, ObservableEmitter<T> emitter);
 
     protected class ApiClientConnectionCallbacks extends BaseRx.ApiClientConnectionCallbacks {
 
-        final protected Subscriber<? super T> subscriber;
+        final protected ObservableEmitter<T> emitter;
 
-        private ApiClientConnectionCallbacks(Subscriber<? super T> subscriber) {
-            this.subscriber = subscriber;
+        private ApiClientConnectionCallbacks(ObservableEmitter<T> emitter) {
+            this.emitter = emitter;
         }
 
         @Override
         public void onConnected(Bundle bundle) {
             try {
-                onGoogleApiClientReady(apiClient, subscriber);
+                onGoogleApiClientReady(apiClient, emitter);
             } catch (Throwable ex) {
-                subscriber.onError(ex);
+                emitter.onError(ex);
             }
         }
 
         @Override
         public void onConnectionSuspended(int cause) {
-            subscriber.onError(new GoogleAPIConnectionSuspendedException(cause));
+            emitter.onError(new GoogleAPIConnectionSuspendedException(cause));
         }
 
         @Override
         public void onConnectionFailed(ConnectionResult connectionResult) {
-            subscriber.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
+            emitter.onError(new GoogleAPIConnectionException("Error connecting to GoogleApiClient.", connectionResult));
         }
     }
 }

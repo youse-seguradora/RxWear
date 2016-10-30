@@ -13,9 +13,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Single;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.observers.TestObserver;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
@@ -208,8 +208,7 @@ public class MessageSendDataMapTest extends BaseTest {
         Message message = spy(rxWear.message());
         Message.SendDataMap sendDataMap = spy(message.sendDataMapToAllRemoteNodes(path));
 
-        TestSubscriber<Integer> sub = new TestSubscriber<>();
-        sendDataMap.toSingle().subscribe(sub);
+        TestObserver<Integer> sub = sendDataMap.toSingle().test();
 
         sub.assertError(UnsupportedOperationException.class);
         sub.assertNoValues();

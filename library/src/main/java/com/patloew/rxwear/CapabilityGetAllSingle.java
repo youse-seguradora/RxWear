@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.Wearable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -33,10 +33,10 @@ class CapabilityGetAllSingle extends BaseSingle<Map<String, CapabilityInfo>> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Map<String, CapabilityInfo>> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<Map<String, CapabilityInfo>> emitter) {
         setupWearPendingResult(
                 Wearable.CapabilityApi.getAllCapabilities(apiClient, nodeFilter),
-                SingleResultCallBack.get(subscriber, CapabilityApi.GetAllCapabilitiesResult::getAllCapabilities)
+                SingleResultCallBack.get(emitter, CapabilityApi.GetAllCapabilitiesResult::getAllCapabilities)
         );
     }
 }

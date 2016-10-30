@@ -16,9 +16,9 @@ import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.observers.TestObserver;
 
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
@@ -37,12 +37,11 @@ public class BaseObservableTest extends BaseOnSubscribeTest {
     @Test
     public void BaseObservable_ApiClient_Connected() {
         final Object object = new Object();
-        TestSubscriber<Object> sub = new TestSubscriber<>();
         BaseObservable<Object> observable = spy(new BaseObservable<Object>(rxWear, null, null) {
             @Override
-            protected void onGoogleApiClientReady(GoogleApiClient apiClient, Subscriber<? super Object> subscriber) {
-                subscriber.onNext(object);
-                subscriber.onCompleted();
+            protected void onGoogleApiClientReady(GoogleApiClient apiClient, ObservableEmitter<Object> emitter) {
+                emitter.onNext(object);
+                emitter.onComplete();
             }
         });
 
@@ -53,21 +52,21 @@ public class BaseObservableTest extends BaseOnSubscribeTest {
             return apiClient;
         }).when(observable).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
 
-        Observable.create(observable).subscribe(sub);
+        TestObserver<Object> sub = Observable.create(observable).test();
 
         sub.assertValue(object);
-        sub.assertCompleted();
+        sub.assertComplete();
     }
 
     @Test
     public void BaseObservable_ApiClient_ConnectionSuspended() {
         final Object object = new Object();
-        TestSubscriber<Object> sub = new TestSubscriber<>();
+
         BaseObservable<Object> observable = spy(new BaseObservable<Object>(rxWear, null, null) {
             @Override
-            protected void onGoogleApiClientReady(GoogleApiClient apiClient, Subscriber<? super Object> subscriber) {
-                subscriber.onNext(object);
-                subscriber.onCompleted();
+            protected void onGoogleApiClientReady(GoogleApiClient apiClient, ObservableEmitter<? super Object> emitter) {
+                emitter.onNext(object);
+                emitter.onComplete();
             }
         });
 
@@ -78,7 +77,7 @@ public class BaseObservableTest extends BaseOnSubscribeTest {
             return apiClient;
         }).when(observable).createApiClient(Matchers.any(BaseRx.ApiClientConnectionCallbacks.class));
 
-        Observable.create(observable).subscribe(sub);
+        TestObserver<Object> sub = Observable.create(observable).test();
 
         sub.assertNoValues();
         sub.assertError(GoogleAPIConnectionSuspendedException.class);

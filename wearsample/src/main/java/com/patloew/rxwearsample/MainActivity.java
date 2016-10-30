@@ -9,15 +9,13 @@ import android.widget.Toast;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.MessageApi;
-import com.patloew.rxwear.Data;
-import com.patloew.rxwear.Message;
 import com.patloew.rxwear.RxWear;
 import com.patloew.rxwear.transformers.DataEventGetDataMap;
 import com.patloew.rxwear.transformers.DataItemGetDataMap;
 import com.patloew.rxwear.transformers.MessageEventGetDataMap;
 
-import rx.Observable;
-import rx.subscriptions.CompositeSubscription;
+import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
 
 public class MainActivity extends WearableActivity {
 
@@ -26,7 +24,7 @@ public class MainActivity extends WearableActivity {
     private TextView mMessageText;
     private TextView mPersistentText;
 
-    private CompositeSubscription subscription = new CompositeSubscription();
+    private CompositeDisposable subscription = new CompositeDisposable();
 
     private RxWear rxWear;
 
@@ -48,7 +46,7 @@ public class MainActivity extends WearableActivity {
                 .subscribe(dataMap -> {
                     mTitleText.setText(dataMap.getString("title", getString(R.string.no_message)));
                     mMessageText.setText(dataMap.getString("message", getString(R.string.no_message_info)));
-                }, throwable -> Toast.makeText(this, "Error on message listen", Toast.LENGTH_LONG)));
+                }, throwable -> Toast.makeText(this, "Error on message listen", Toast.LENGTH_LONG).show()));
 
         subscription.add(
                 Observable.concat(
@@ -56,17 +54,14 @@ public class MainActivity extends WearableActivity {
                         rxWear.data().listen("/persistentText", DataApi.FILTER_LITERAL).compose(DataEventGetDataMap.filterByType(DataEvent.TYPE_CHANGED))
                 ).map(dataMap -> dataMap.getString("text"))
                 .subscribe(text -> mPersistentText.setText(text),
-                        throwable -> Toast.makeText(this, "Error on data listen", Toast.LENGTH_LONG))
+                        throwable -> Toast.makeText(this, "Error on data listen", Toast.LENGTH_LONG).show())
         );
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        if(subscription != null && !subscription.isUnsubscribed()) {
-            subscription.unsubscribe();
-        }
+        subscription.clear();
     }
 
     @Override

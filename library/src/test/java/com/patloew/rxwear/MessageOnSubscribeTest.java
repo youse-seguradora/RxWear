@@ -22,9 +22,9 @@ import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import rx.Observable;
-import rx.Single;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.observers.TestObserver;
 
 import static org.mockito.Mockito.when;
 
@@ -46,7 +46,6 @@ public class MessageOnSubscribeTest extends BaseOnSubscribeTest {
 
     @Test
     public void MessageListenerObservable_Success() {
-        TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
         MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, null, null, null, null));
 
         setPendingResultValue(status);
@@ -54,15 +53,14 @@ public class MessageOnSubscribeTest extends BaseOnSubscribeTest {
         when(messageApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(MessageApi.MessageListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        TestObserver<MessageEvent> sub = Observable.create(observable).test();
 
-        sub.assertNoTerminalEvent();
+        sub.assertNotTerminated();
         sub.assertNoValues();
     }
 
     @Test
     public void MessageListenerObservable_StatusException() {
-        TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
         MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, null, null, null, null));
 
         setPendingResultValue(status);
@@ -70,14 +68,12 @@ public class MessageOnSubscribeTest extends BaseOnSubscribeTest {
         when(messageApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(MessageApi.MessageListener.class))).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Observable.create(observable).test(), StatusException.class);
     }
 
     @Test
     public void MessageListenerObservable_Uri_Success() {
-        TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
         int filterType = 0;
         MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, uri, filterType, null, null));
 
@@ -86,15 +82,14 @@ public class MessageOnSubscribeTest extends BaseOnSubscribeTest {
         when(messageApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(MessageApi.MessageListener.class), Matchers.any(Uri.class), Matchers.anyInt())).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
+        TestObserver<MessageEvent> sub = Observable.create(observable).test();
 
-        sub.assertNoTerminalEvent();
+        sub.assertNotTerminated();
         sub.assertNoValues();
     }
 
     @Test
     public void MessageListenerObservable_Uri_StatusException() {
-        TestSubscriber<MessageEvent> sub = new TestSubscriber<>();
         int filterType = 0;
         MessageListenerObservable observable = PowerMockito.spy(new MessageListenerObservable(rxWear, uri, filterType, null, null));
 
@@ -103,16 +98,14 @@ public class MessageOnSubscribeTest extends BaseOnSubscribeTest {
         when(messageApi.addListener(Matchers.any(GoogleApiClient.class), Matchers.any(MessageApi.MessageListener.class), Matchers.any(Uri.class), Matchers.anyInt())).thenReturn(pendingResult);
 
         setupBaseObservableSuccess(observable);
-        Observable.create(observable).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Observable.create(observable).test(), StatusException.class);
     }
 
     // MessageSendSingle
 
     @Test
     public void MessageSendSingle_Success() {
-        TestSubscriber<Integer> sub = new TestSubscriber<>();
         MessageApi.SendMessageResult result = Mockito.mock(MessageApi.SendMessageResult.class);
         String nodeId = "nodeId";
         String path = "path";
@@ -126,14 +119,12 @@ public class MessageOnSubscribeTest extends BaseOnSubscribeTest {
         when(messageApi.sendMessage(apiClient, nodeId, path, data)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertSingleValue(sub, 1);
+        assertSingleValue(Single.create(single).test(), 1);
     }
 
     @Test
     public void MessageSendSingle_StatusException() {
-        TestSubscriber<Integer> sub = new TestSubscriber<>();
         MessageApi.SendMessageResult result = Mockito.mock(MessageApi.SendMessageResult.class);
         String nodeId = "nodeId";
         String path = "path";
@@ -147,9 +138,8 @@ public class MessageOnSubscribeTest extends BaseOnSubscribeTest {
         when(messageApi.sendMessage(apiClient, nodeId, path, data)).thenReturn(pendingResult);
 
         setupBaseSingleSuccess(single);
-        Single.create(single).subscribe(sub);
 
-        assertError(sub, StatusException.class);
+        assertError(Single.create(single).test(), StatusException.class);
     }
 
 }

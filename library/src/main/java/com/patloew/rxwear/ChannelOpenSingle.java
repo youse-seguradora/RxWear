@@ -7,7 +7,7 @@ import com.google.android.gms.wearable.Wearable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -34,17 +34,17 @@ class ChannelOpenSingle extends BaseSingle<Channel> {
     }
 
     @Override
-    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleSubscriber<? super Channel> subscriber) {
+    protected void onGoogleApiClientReady(GoogleApiClient apiClient, final SingleEmitter<Channel> emitter) {
         setupWearPendingResult(
                 Wearable.ChannelApi.openChannel(apiClient, nodeId, path),
                 openChannelResult -> {
                     if (!openChannelResult.getStatus().isSuccess()) {
-                        subscriber.onError(new StatusException(openChannelResult.getStatus()));
+                        emitter.onError(new StatusException(openChannelResult.getStatus()));
                     } else {
                         if(openChannelResult.getChannel() != null) {
-                            subscriber.onSuccess(openChannelResult.getChannel());
+                            emitter.onSuccess(openChannelResult.getChannel());
                         } else {
-                            subscriber.onError(new IOException("Channel connection could not be opened"));
+                            emitter.onError(new IOException("Channel connection could not be opened"));
                         }
                     }
                 }

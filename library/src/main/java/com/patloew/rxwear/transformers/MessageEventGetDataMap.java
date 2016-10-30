@@ -3,7 +3,8 @@ package com.patloew.rxwear.transformers;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 
-import rx.Observable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
 
 /* Copyright 2016 Patrick Löwenstein
  *
@@ -24,7 +25,7 @@ import rx.Observable;
  * Transformer that filters MessageEvents by path and returns an
  * Observable<DataMap> of the dataMap from the MessageEvent.
  */
-public class MessageEventGetDataMap implements Observable.Transformer<MessageEvent, DataMap> {
+public class MessageEventGetDataMap implements ObservableTransformer<MessageEvent, DataMap> {
 
     private final String path;
     private final boolean isPrefix;
@@ -34,20 +35,20 @@ public class MessageEventGetDataMap implements Observable.Transformer<MessageEve
         this.isPrefix = isPrefix;
     }
 
-    public static Observable.Transformer<MessageEvent, DataMap> noFilter() {
+    public static ObservableTransformer<MessageEvent, DataMap> noFilter() {
         return new MessageEventGetDataMap(null, false);
     }
 
-    public static Observable.Transformer<MessageEvent, DataMap> filterByPath(String path) {
+    public static ObservableTransformer<MessageEvent, DataMap> filterByPath(String path) {
         return new MessageEventGetDataMap(path, false);
     }
 
-    public static Observable.Transformer<MessageEvent, DataMap> filterByPathPrefix(String pathPrefix) {
+    public static ObservableTransformer<MessageEvent, DataMap> filterByPathPrefix(String pathPrefix) {
         return new MessageEventGetDataMap(pathPrefix, true);
     }
 
     @Override
-    public Observable<DataMap> call(Observable<MessageEvent> observable) {
+    public Observable<DataMap> apply(Observable<MessageEvent> observable) {
         if(path != null) {
             observable = observable.filter(messageEvent -> {
                 if (isPrefix) {

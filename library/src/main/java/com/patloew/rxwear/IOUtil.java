@@ -8,7 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import rx.exceptions.Exceptions;
+import io.reactivex.exceptions.Exceptions;
 
 /* Copyright 2016 Patrick Löwenstein
  *

@@ -1,8 +1,8 @@
 # Reactive Wearable API Library for Android
 
-[![Build Status](https://travis-ci.org/patloew/RxWear.svg?branch=master)](https://travis-ci.org/patloew/RxWear) [![codecov](https://codecov.io/gh/patloew/RxWear/branch/master/graph/badge.svg)](https://codecov.io/gh/patloew/RxWear) [ ![Download](https://api.bintray.com/packages/patloew/maven/RxWear/images/download.svg) ](https://bintray.com/patloew/maven/RxWear/_latestVersion) [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-RxWear-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/3271) [![API](https://img.shields.io/badge/API-9%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=9)
+[![Build Status](https://travis-ci.org/patloew/RxWear.svg?branch=2.x)](https://travis-ci.org/patloew/RxWear) [![codecov](https://codecov.io/gh/patloew/RxWear/branch/2.x/graph/badge.svg)](https://codecov.io/gh/patloew/RxWear/branch/2.x) [ ![Download](https://api.bintray.com/packages/patloew/maven/RxWear2/images/download.svg) ](https://bintray.com/patloew/maven/RxWear2/_latestVersion) [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-RxWear-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/3271) [![API](https://img.shields.io/badge/API-9%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=9)
 
-This library wraps the Wearable API in [RxJava](https://github.com/ReactiveX/RxJava) Observables and Singles. No more managing GoogleApiClients! Also, there are some helper classes, which ease communication between phone and wear app.
+This library wraps the Wearable API in [RxJava 2](https://github.com/ReactiveX/RxJava/tree/2.x) Observables and Singles. No more managing GoogleApiClients! Also, there are some helper classes, which ease communication between phone and wear app.
 
 # Usage
 
@@ -79,7 +79,7 @@ A basic sample app is available in the `sample` and `wearsample` projects.
 The lib is available on jCenter. Add the following to your `build.gradle`:
 
 	dependencies {
-	    compile 'com.patloew.rxwear:rxwear:1.3.0'
+	    compile 'com.patloew.rxwear:rxwear2:2.0.0'
 	}
 
 # Credits
