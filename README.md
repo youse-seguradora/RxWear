@@ -4,6 +4,8 @@
 
 This library wraps the Wearable API in [RxJava](https://github.com/ReactiveX/RxJava) Observables and Singles. No more managing GoogleApiClients! Also, there are some helper classes, which ease communication between phone and wear app.
 
+See the [2.x branch](https://github.com/patloew/RxWear/tree/2.x) for a RxJava 2 version of this library.
+
 # Usage
 
 Create an RxWear instance once, preferably in your Application's `onCreate()` or by using a dependency injection framework. The RxWear class is very similar to the Wearable class provided by the Wearable API. Instead of `Wearable.MessageApi.sendMessage(apiClient, nodeId, path, data)` you can use `rxWear.message().send(nodeId, path, data)`. 
@@ -80,6 +82,8 @@ The lib is available on jCenter. Add the following to your `build.gradle`:
 
 	dependencies {
 	    compile 'com.patloew.rxwear:rxwear:1.3.0'
+	    // or, for a RxJava 2 version of this library:
+	    compile 'com.patloew.rxwear:rxwear2:2.0.0'
 	}
 
 # Credits
