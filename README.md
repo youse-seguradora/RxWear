@@ -1,3 +1,5 @@
+## We need to take the fork repository, because the fix wasnt merged yet.
+
 # Reactive Wearable API Library for Android
 
 [![Build Status](https://travis-ci.org/patloew/RxWear.svg?branch=2.x)](https://travis-ci.org/patloew/RxWear) [![codecov](https://codecov.io/gh/patloew/RxWear/branch/2.x/graph/badge.svg)](https://codecov.io/gh/patloew/RxWear/branch/2.x) [ ![Download](https://api.bintray.com/packages/patloew/maven/RxWear2/images/download.svg) ](https://bintray.com/patloew/maven/RxWear2/_latestVersion) [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-RxWear-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/3271) [![API](https://img.shields.io/badge/API-9%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=9)
