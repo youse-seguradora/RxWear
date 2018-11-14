@@ -1,4 +1,4 @@
-## We need to take the fork this repository, because the fix wasnt merged yet.
+## This repository is used for Android team, We need to take the fork this repository, because the fix wasnt merged yet and we still havent definitions about dates.
 
 # Reactive Wearable API Library for Android
 
