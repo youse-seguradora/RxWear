@@ -1,4 +1,4 @@
-## We need to take the fork repository, because the fix wasnt merged yet.
+## We need to take the fork this repository, because the fix wasnt merged yet.
 
 # Reactive Wearable API Library for Android
 
