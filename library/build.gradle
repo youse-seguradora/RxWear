@@ -40,8 +40,8 @@ android {
 
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
-    api 'io.reactivex.rxjava2:rxjava:2.1.0'
-    api 'com.google.android.gms:play-services-wearable:15.0.1'
+    api 'io.reactivex.rxjava2:rxjava:2.2.5'
+    api 'com.google.android.gms:play-services-wearable:16.0.1'
 
     testImplementation'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.17.0'
